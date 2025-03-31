@@ -1,0 +1,2 @@
+Disclaimer
+This app is provided for informational purposes only and does not constitute professional advice on gambling or betting. The developer is not responsible for any losses or consequences that may result from the use of this application. Users should exercise caution and use their own judgment.
