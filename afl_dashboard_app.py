@@ -104,6 +104,9 @@ game_info = game_info_mapping.get(selected_game, {
 # ----------------------------------------------------
 excel_file = "Export.xlsx"
 # header=None prevents pandas from treating the first row as column names.
+
+st.write("Trying to load sheet:", sheet_name)
+
 df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
 
 # ----------------------------------------------------
