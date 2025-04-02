@@ -8,14 +8,14 @@ st.set_page_config(layout="wide")
 # 1. Mapping: Full Game Name -> Actual Sheet Name
 # ----------------------------------------------------
 game_name_mapping = {
-    "Essendon VS Port Adelaide": "Essendon VS Port Adelaide",
-    "Carlton VS Western Bulldogs": "Carlton VS Western Bulldogs",
-    "Melbourne VS Gold Coast": "Melbourne VS Gold Coast",
-    "St Kilda VS Richmond": "St Kilda VS Richmond",
-    "Brisbane Lions VS Geelong": "Brisbane Lions VS Geelong",
-    "Hawthorn VS Greater Western Sydney": "Hawthorn VS Greater Western Syd",  # truncated in Excel
-    "Adelaide VS North Melbourne": "Adelaide VS North Melbourne",
-    "West Coast VS Fremantle": "West Coast VS Fremantle"
+    "Collingwood VS Carlton": "Collingwood VS Carlton",
+    "Geelong VS Melbourne": "Geelong VS Melbourne",
+    "Gold Coast VS Adelaide": "Gold Coast VS Adelaide",
+    "Richmond VS Brisbane Lions": "Richmond VS Brisbane Lions",
+    "North Melbourne VS Sydney": "North Melbourne VS Sydney",
+    "Greater Western Sydney VS West Coast": "Greater Western Sydney VS West",  # truncated in Excel
+    "Port Adelaide VS St Kilda": "Port Adelaide VS St Kilda",
+    "Fremantle VS Western Bulldogs": "Fremantle VS Western Bulldogs"
 }
 game_names = list(game_name_mapping.keys())
 
@@ -23,61 +23,61 @@ game_names = list(game_name_mapping.keys())
 # 2. Extra Game Info (Round, Team Names, Percentages)
 # ----------------------------------------------------
 game_info_mapping = {
-    "Essendon VS Port Adelaide": {
-        "round": 3,
-        "home": "Essendon",
-        "home_percent": "44%",
-        "away": "Port Adelaide",
-        "away_percent": "61%"
+    "Collingwood VS Carlton": {
+        "round": 4,
+        "home": "Collingwood",
+        "home_percent": "68%",
+        "away": "Carlton",
+        "away_percent": "37%"
     },
-    "Carlton VS Western Bulldogs": {
-        "round": 3,
-        "home": "Carlton",
-        "home_percent": "49%",
+    "Geelong VS Melbourne": {
+        "round": 4,
+        "home": "Geelong",
+        "home_percent": "83%",
+        "away": "Melbourne",
+        "away_percent": "22%"
+    },
+    "Gold Coast VS Adelaide": {
+        "round": 4,
+        "home": "Gold Coast",
+        "home_percent": "58%",
+        "away": "Adelaide",
+        "away_percent": "47%"
+    },
+    "Richmond VS Brisbane Lions": {
+        "round": 4,
+        "home": "Richmond",
+        "home_percent": "13%",
+        "away": "Brisbane Lions",
+        "away_percent": "93%"
+    },
+    "North Melbourne VS Sydney": {
+        "round": 4,
+        "home": "North Melbourne",
+        "home_percent": "41%",
+        "away": "Sydney",
+        "away_percent": "64%"
+    },
+    "Greater Western Sydney VS West Coast": {
+        "round": 4,
+        "home": "Greater Western Sydney",
+        "home_percent": "96%",
+        "away": "West Coast",
+        "away_percent": "9%"
+    },
+    "Port Adelaide VS St Kilda": {
+        "round": 4,
+        "home": "Port Adelaide",
+        "home_percent": "65%",
+        "away": "St Kilda",
+        "away_percent": "40%"
+    },
+    "Fremantle VS Western Bulldogs": {
+        "round": 4,
+        "home": "Fremantle",
+        "home_percent": "63%",
         "away": "Western Bulldogs",
-        "away_percent": "55%"
-    },
-    "Melbourne VS Gold Coast": {
-        "round": 3,
-        "home": "Melbourne",
-        "home_percent": "??",
-        "away": "Gold Coast",
-        "away_percent": "??"
-    },
-    "St Kilda VS Richmond": {
-        "round": 3,
-        "home": "St Kilda",
-        "home_percent": "??",
-        "away": "Richmond",
-        "away_percent": "??"
-    },
-    "Brisbane Lions VS Geelong": {
-        "round": 3,
-        "home": "Brisbane Lions",
-        "home_percent": "??",
-        "away": "Geelong",
-        "away_percent": "??"
-    },
-    "Hawthorn VS Greater Western Sydney": {
-        "round": 3,
-        "home": "Hawthorn",
-        "home_percent": "??",
-        "away": "Greater Western Sydney",
-        "away_percent": "??"
-    },
-    "Adelaide VS North Melbourne": {
-        "round": 3,
-        "home": "Adelaide",
-        "home_percent": "??",
-        "away": "North Melbourne",
-        "away_percent": "??"
-    },
-    "West Coast VS Fremantle": {
-        "round": 3,
-        "home": "West Coast",
-        "home_percent": "??",
-        "away": "Fremantle",
-        "away_percent": "??"
+        "away_percent": "43%"
     }
 }
 
@@ -85,6 +85,15 @@ game_info_mapping = {
 # 3. Sidebar: Game Selection
 # ----------------------------------------------------
 selected_game = st.sidebar.selectbox("Select a game", game_names)
+# ----------------------------------------------------
+# 3a. Sidebar: BMC
+# ----------------------------------------------------
+st.sidebar.markdown("---")
+st.sidebar.markdown("☕️ **Support the project**")
+st.sidebar.markdown(
+    "[Buy me a coffee](https://www.buymeacoffee.com/aflmodel)"
+)
+
 sheet_name = game_name_mapping[selected_game]
 game_info = game_info_mapping.get(selected_game, {
     "round": "??", "home": "Home", "home_percent": "??", "away": "Away", "away_percent": "??"
@@ -148,7 +157,7 @@ def style_table(df, odds_col, vs_col):
 # ----------------------------------------------------
 # 8. Display the Dashboard
 # ----------------------------------------------------
-st.title("AFL Betting Dashboard (Example)")
+st.title("AFL Goalscorer Dashboard")
 
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
 col_perc_left, col_perc_right = st.columns(2)
