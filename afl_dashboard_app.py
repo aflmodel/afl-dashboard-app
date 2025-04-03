@@ -170,7 +170,7 @@ st.write("---")
 # 7. Goalscorer Dashboard
 # ----------------------------------------------------
 if dashboard_tab == "Goalscorer":
-    st.subheader("Anytime Goal Scorer (AGS)")
+    st.subheader("Anytime Goal Scorer")
     col1, col2 = st.columns(2)
     with col1:
         st.caption(game_info["home"])
