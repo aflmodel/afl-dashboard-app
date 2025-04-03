@@ -151,15 +151,20 @@ venue_display = (
 
 # Only show weather if date is close
 if (game_info["date"] - datetime.today().date()).days <= 5:
-    weather_line = get_weather_forecast(weather_city, game_info["date"], api_key)
-    # Replace city in result with nicer venue text
-    if "·" in weather_line:
-        weather_line = weather_line.rsplit("·", 1)[0] + f"· {venue_display}"
+    raw_forecast = get_weather_forecast(weather_city, game_info["date"], api_key)
+    
+    # Add emoji based on description
+    desc = raw_forecast.lower()
+    emoji = "☀️" if "clear" in desc else "🌧️" if "rain" in desc else "🌤️"
+    
+    # Replace city in forecast line with venue display
+    if "·" in raw_forecast:
+        weather_line = emoji + " " + raw_forecast.rsplit("·", 1)[0] + f"· {venue_display}"
+    else:
+        weather_line = emoji + " " + raw_forecast
 else:
     weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
 
-st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
-st.markdown(f"**Game Day Forecast:** {weather_line}")
 
 col1, col2 = st.columns(2)
 col1.markdown(f"**{game_info['home']}:** {game_info['home_percent']}")
@@ -174,36 +179,34 @@ if dashboard_tab == "Goalscorer":
     col1, col2 = st.columns(2)
     with col1:
         st.caption(game_info["home"])
-        st.dataframe(style_table(home_ags, "AGS Odds", f"VS {game_info['away']}"), height=213, hide_index=True)
+        st.dataframe(style_table(home_ags, "AGS Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
     with col2:
         st.caption(game_info["away"])
-        st.dataframe(style_table(away_ags, "AGS Odds", f"VS {game_info['home']}"), height=213, hide_index=True)
+        st.dataframe(style_table(away_ags, "AGS Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
 
     st.subheader("2+ Goals")
     col3, col4 = st.columns(2)
     with col3:
         st.caption(game_info["home"])
-        st.dataframe(style_table(home_2plus, "2+ Odds", f"VS {game_info['away']}"), height=213, hide_index=True)
+        st.dataframe(style_table(home_2plus, "2+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
     with col4:
         st.caption(game_info["away"])
-        st.dataframe(style_table(away_2plus, "2+ Odds", f"VS {game_info['home']}"), height=213, hide_index=True)
+        st.dataframe(style_table(away_2plus, "2+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
 
     st.subheader("3+ Goals")
     col5, col6 = st.columns(2)
     with col5:
         st.caption(game_info["home"])
-        st.dataframe(style_table(home_3plus, "3+ Odds", f"VS {game_info['away']}"), height=213, hide_index=True)
+        st.dataframe(style_table(home_3plus, "3+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
     with col6:
         st.caption(game_info["away"])
-        st.dataframe(style_table(away_3plus, "3+ Odds", f"VS {game_info['home']}"), height=213, hide_index=True)
+        st.dataframe(style_table(away_3plus, "3+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
 
 # ----------------------------------------------------
 # 8. Disposals Tab 
 # ----------------------------------------------------
 elif dashboard_tab == "Disposals":
-    st.subheader("Disposals Dashboard")
 
-    
 # Load the ExportDisposals sheet for this game
 disposals_sheet = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
 
@@ -228,27 +231,27 @@ st.subheader("15+ Disposals")
 col1, col2 = st.columns(2)
 with col1:
     st.caption(game_info["home"])
-    st.dataframe(style_table(home_15, "15+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+    st.dataframe(style_table(home_15, "15+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
 with col2:
     st.caption(game_info["away"])
-    st.dataframe(style_table(away_15, "15+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+    st.dataframe(style_table(away_15, "15+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
 
 # 20+ Disposals
 st.subheader("20+ Disposals")
 col3, col4 = st.columns(2)
 with col3:
     st.caption(game_info["home"])
-    st.dataframe(style_table(home_20, "20+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+    st.dataframe(style_table(home_20, "20+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
 with col4:
     st.caption(game_info["away"])
-    st.dataframe(style_table(away_20, "20+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+    st.dataframe(style_table(away_20, "20+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
 
 # 25+ Disposals
 st.subheader("25+ Disposals")
 col5, col6 = st.columns(2)
 with col5:
     st.caption(game_info["home"])
-    st.dataframe(style_table(home_25, "25+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+    st.dataframe(style_table(home_25, "25+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
 with col6:
     st.caption(game_info["away"])
-    st.dataframe(style_table(away_25, "25+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+    st.dataframe(style_table(away_25, "25+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
