@@ -153,11 +153,11 @@ venue_display = (
 if (game_info["date"] - datetime.today().date()).days <= 5:
     raw_forecast = get_weather_forecast(weather_city, game_info["date"], api_key)
     
-    # Add emoji based on description
-    desc = raw_forecast.lower()
+    # Safely lower-case description for emoji logic
+    desc = raw_forecast.lower() if isinstance(raw_forecast, str) else ""
     emoji = "☀️" if "clear" in desc else "🌧️" if "rain" in desc else "🌤️"
     
-    # Replace city in forecast line with venue display
+    # Insert venue-friendly label in place of city
     if "·" in raw_forecast:
         weather_line = emoji + " " + raw_forecast.rsplit("·", 1)[0] + f"· {venue_display}"
     else:
