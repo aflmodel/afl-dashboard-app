@@ -1,25 +1,32 @@
+# ----------------------------------------------------
+# AFL EDGE DASHBOARD – Streamlit App
+# ----------------------------------------------------
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import requests
 
-# Set page layout and background colors
+# ----------------------------------------------------
+# 0. Page Setup & Styling
+# ----------------------------------------------------
 st.set_page_config(layout="wide")
+
 st.markdown("""
     <style>
     .stApp {
         background-color: #FFF8F0;
     }
     section[data-testid="stSidebar"] {
-        background-color: #eaf6ff;
+        background-color: #f5fbff;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # ----------------------------------------------------
-# 0. Weather Forecast Function
+# 1. Weather Forecast Function
 # ----------------------------------------------------
 def get_weather_forecast(city, game_date, api_key):
-    import requests
     try:
         url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         response = requests.get(url)
@@ -37,65 +44,76 @@ def get_weather_forecast(city, game_date, api_key):
                 return f"{temp:.1f}°C, {desc.capitalize()} – {game_date.strftime('%B %d')} · {city}"
 
         return f"Forecast not found – {game_date.strftime('%B %d')} · {city}"
-
     except Exception as e:
         return f"Weather fetch failed: {e}"
 
 # ----------------------------------------------------
-# 1. Mapping: Full Game Name -> Actual Sheet Name
+# 2. Load Game Info from Excel
 # ----------------------------------------------------
-game_name_mapping = {
-    "Collingwood VS Carlton": "Collingwood VS Carlton",
-    "Geelong VS Melbourne": "Geelong VS Melbourne",
-    "Gold Coast VS Adelaide": "Gold Coast VS Adelaide",
-    "Richmond VS Brisbane Lions": "Richmond VS Brisbane Lions",
-    "North Melbourne VS Sydney": "North Melbourne VS Sydney",
-    "Greater Western Sydney VS West Coast": "Greater Western Sydney VS West",  # truncated
-    "Port Adelaide VS St Kilda": "Port Adelaide VS St Kilda",
-    "Fremantle VS Western Bulldogs": "Fremantle VS Western Bulldogs"
-}
-game_names = list(game_name_mapping.keys())
+excel_file = "Export.xlsx"
+xls = pd.ExcelFile(excel_file)
+sheet_names = xls.sheet_names
 
-# ----------------------------------------------------
-# 2. Game Info Mapping
-# ----------------------------------------------------
-game_info_mapping = {
-    "Collingwood VS Carlton": {
-        "round": 4, "home": "Collingwood", "home_percent": "68%", "away": "Carlton", "away_percent": "37%", "date": datetime(2024, 4, 3).date(), "city": "Melbourne"
-    },
-    # ... repeat for all other games
-    "Fremantle VS Western Bulldogs": {
-        "round": 4, "home": "Fremantle", "home_percent": "63%", "away": "Western Bulldogs", "away_percent": "43%", "date": datetime(2024, 4, 7).date(), "city": "Perth"
-    }
-}
+game_name_mapping = {}
+game_info_mapping = {}
+
+for sheet in sheet_names:
+    df = pd.read_excel(xls, sheet_name=sheet, header=None)
+    try:
+        matchup = df.iloc[0, 1]  # B1
+        date = df.iloc[1, 3]     # D2
+        city = df.iloc[1, 4]     # E2
+        home_percent = df.iloc[1, 2]  # C2
+        away_percent = df.iloc[1, 11] # L2
+
+        if isinstance(matchup, str) and "VS" in matchup:
+            game_name = matchup.strip()
+            game_name_mapping[game_name] = sheet
+            home, away = [x.strip() for x in game_name.split("VS")]
+
+            game_info_mapping[game_name] = {
+                "round": 4,
+                "home": home,
+                "away": away,
+                "home_percent": f"{float(home_percent) * 100:.0f}%" if pd.notnull(home_percent) else "??",
+                "away_percent": f"{float(away_percent) * 100:.0f}%" if pd.notnull(away_percent) else "??",
+                "date": pd.to_datetime(date).date() if pd.notnull(date) else None,
+                "city": "Melbourne" if str(city).strip().lower() == "marvel" else str(city).strip()
+            }
+    except Exception as e:
+        print(f"Error processing {sheet}: {e}")
 
 # ----------------------------------------------------
 # 3. Sidebar Layout
 # ----------------------------------------------------
 st.sidebar.image("logo.png", use_container_width=True)
-selected_game = st.sidebar.selectbox("Select a game", game_names)
+
+selected_game = st.sidebar.selectbox("Select a game", list(game_name_mapping.keys()))
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("☕️ **Support the project**")
 st.sidebar.markdown("[Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
 
 # ----------------------------------------------------
-# 4. Load Excel Sheet
+# 4. Load Selected Game Data
 # ----------------------------------------------------
-excel_file = "Export.xlsx"
 sheet_name = game_name_mapping[selected_game]
-df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
 game_info = game_info_mapping[selected_game]
+df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
 
-# ----------------------------------------------------
-# 5. Extract Data Tables
-# ----------------------------------------------------
-home_ags = df_sheet.iloc[3:8, 1:5]
-away_ags = df_sheet.iloc[3:8, 8:12]
+# AGS Section
+home_ags  = df_sheet.iloc[3:8, 1:5]
+away_ags  = df_sheet.iloc[3:8, 8:12]
+
+# 2+ Goals
 home_2plus = df_sheet.iloc[10:15, 1:5]
 away_2plus = df_sheet.iloc[10:15, 8:12]
+
+# 3+ Goals
 home_3plus = df_sheet.iloc[17:22, 1:5]
 away_3plus = df_sheet.iloc[17:22, 8:12]
 
+# Rename columns
 home_ags.columns = ["Players", "Edge", "AGS Odds", f"VS {game_info['away']}"]
 away_ags.columns = ["Players", "Edge", "AGS Odds", f"VS {game_info['home']}"]
 home_2plus.columns = ["Players", "Edge", "2+ Odds", f"VS {game_info['away']}"]
@@ -104,7 +122,7 @@ home_3plus.columns = ["Players", "Edge", "3+ Odds", f"VS {game_info['away']}"]
 away_3plus.columns = ["Players", "Edge", "3+ Odds", f"VS {game_info['home']}"]
 
 # ----------------------------------------------------
-# 6. Table Styling Function
+# 5. Styling Function
 # ----------------------------------------------------
 def style_table(df, odds_col, vs_col):
     return df.style.format({
@@ -114,25 +132,30 @@ def style_table(df, odds_col, vs_col):
     })
 
 # ----------------------------------------------------
-# 7. Tabs and Display
+# 6. Dashboard Layout
 # ----------------------------------------------------
 dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
 st.title("AFL Edge Dashboard")
 
-# Weather
+# Game Title & Forecast
 api_key = st.secrets["openweather_api_key"]
-weather_line = get_weather_forecast(game_info["city"], game_info["date"], api_key)
 
-# Game Info + Forecast
+# Only show weather if within 5 days
+if (game_info["date"] - datetime.today().date()).days <= 5:
+    weather_line = get_weather_forecast(game_info["city"], game_info["date"], api_key)
+else:
+    weather_line = f"{game_info['date'].strftime('%B %d')} · {game_info['city']} (too far ahead)"
+
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
 st.markdown(f"**Game Day Forecast:** {weather_line}")
-col_left, col_right = st.columns(2)
-col_left.markdown(f"**{game_info['home']}:** {game_info['home_percent']}")
-col_right.markdown(f"**{game_info['away']}:** {game_info['away_percent']}")
+
+col1, col2 = st.columns(2)
+col1.markdown(f"**{game_info['home']}:** {game_info['home_percent']}")
+col2.markdown(f"**{game_info['away']}:** {game_info['away_percent']}")
 st.write("---")
 
 # ----------------------------------------------------
-# Goalscorer Dashboard
+# 7. Goalscorer Dashboard
 # ----------------------------------------------------
 if dashboard_tab == "Goalscorer":
     st.subheader("Anytime Goal Scorer (AGS)")
@@ -163,7 +186,7 @@ if dashboard_tab == "Goalscorer":
         st.dataframe(style_table(away_3plus, "3+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
 
 # ----------------------------------------------------
-# Disposals Tab
+# 8. Disposals Tab (Coming Soon)
 # ----------------------------------------------------
 elif dashboard_tab == "Disposals":
     st.subheader("Disposals Dashboard")
