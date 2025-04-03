@@ -197,6 +197,11 @@ api_key = st.secrets["openweather_api_key"]
 
 # Get weather forecast
 weather_line = get_weather_forecast(game_info["city"], game_info["date"], api_key)
+#TESTING
+st.write("Weather block running...")
+st.write("City:", game_info["city"])
+st.write("Date:", game_info["date"])
+st.write("API Key found:", "openweather_api_key" in st.secrets)
 
 # Game day forecast
 st.markdown(f"**Game Day Forecast:** {weather_line}")
