@@ -206,25 +206,25 @@ if dashboard_tab == "Goalscorer":
 # 8. Disposals Tab 
 # ----------------------------------------------------
 elif dashboard_tab == "Disposals":
+    
+    # Load the ExportDisposals sheet for this game
+    disposals_sheet = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
 
-# Load the ExportDisposals sheet for this game
-disposals_sheet = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
+    # Extract 15+, 20+, 25+ tables
+    home_15 = disposals_sheet.iloc[3:8, 1:5]
+    away_15 = disposals_sheet.iloc[3:8, 8:12]
+    home_20 = disposals_sheet.iloc[10:15, 1:5]
+    away_20 = disposals_sheet.iloc[10:15, 8:12]
+    home_25 = disposals_sheet.iloc[17:22, 1:5]
+    away_25 = disposals_sheet.iloc[17:22, 8:12]
 
-# Extract 15+, 20+, 25+ tables
-home_15 = disposals_sheet.iloc[3:8, 1:5]
-away_15 = disposals_sheet.iloc[3:8, 8:12]
-home_20 = disposals_sheet.iloc[10:15, 1:5]
-away_20 = disposals_sheet.iloc[10:15, 8:12]
-home_25 = disposals_sheet.iloc[17:22, 1:5]
-away_25 = disposals_sheet.iloc[17:22, 8:12]
-
-# Rename columns
-home_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
-away_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
-home_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['away']}"]
-away_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['home']}"]
-home_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
-away_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
+    # Rename columns
+    home_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
+    away_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
+    home_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['away']}"]
+    away_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['home']}"]
+    home_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
+    away_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
 
 # 15+ Disposals
 st.subheader("15+ Disposals")
