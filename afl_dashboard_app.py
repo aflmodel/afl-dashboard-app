@@ -78,7 +78,9 @@ for sheet in sheet_names:
                 "home_percent": f"{float(home_percent) * 100:.0f}%" if pd.notnull(home_percent) else "??",
                 "away_percent": f"{float(away_percent) * 100:.0f}%" if pd.notnull(away_percent) else "??",
                 "date": pd.to_datetime(date).date() if pd.notnull(date) else None,
-                "city": "Melbourne" if str(city).strip().lower() == "marvel" else str(city).strip()
+                "city": str(city).strip(),
+                "weather_city": "Melbourne" if str(city).strip().lower() == "marvel" else str(city).strip()
+
             }
     except Exception as e:
         print(f"Error processing {sheet}: {e}")
@@ -135,16 +137,26 @@ def style_table(df, odds_col, vs_col):
 # 6. Dashboard Layout
 # ----------------------------------------------------
 dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
-st.title("AFL Edge Dashboard")
+st.title("AFL Dashboard")
 
 # Game Title & Forecast
 api_key = st.secrets["openweather_api_key"]
 
-# Only show weather if within 5 days
+# Use separate city name for weather (Melbourne if Marvel)
+weather_city = game_info["weather_city"]
+venue_display = (
+    "Melbourne (Marvel Stadium)" if game_info["city"].lower() == "marvel"
+    else game_info["city"]
+)
+
+# Only show weather if date is close
 if (game_info["date"] - datetime.today().date()).days <= 5:
-    weather_line = get_weather_forecast(game_info["city"], game_info["date"], api_key)
+    weather_line = get_weather_forecast(weather_city, game_info["date"], api_key)
+    # Replace city in result with nicer venue text
+    if "·" in weather_line:
+        weather_line = weather_line.rsplit("·", 1)[0] + f"· {venue_display}"
 else:
-    weather_line = f"{game_info['date'].strftime('%B %d')} · {game_info['city']} (too far ahead)"
+    weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
 
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
 st.markdown(f"**Game Day Forecast:** {weather_line}")
@@ -162,28 +174,28 @@ if dashboard_tab == "Goalscorer":
     col1, col2 = st.columns(2)
     with col1:
         st.caption(game_info["home"])
-        st.dataframe(style_table(home_ags, "AGS Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+        st.dataframe(style_table(home_ags, "AGS Odds", f"VS {game_info['away']}"), height=213, hide_index=True)
     with col2:
         st.caption(game_info["away"])
-        st.dataframe(style_table(away_ags, "AGS Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+        st.dataframe(style_table(away_ags, "AGS Odds", f"VS {game_info['home']}"), height=213, hide_index=True)
 
     st.subheader("2+ Goals")
     col3, col4 = st.columns(2)
     with col3:
         st.caption(game_info["home"])
-        st.dataframe(style_table(home_2plus, "2+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+        st.dataframe(style_table(home_2plus, "2+ Odds", f"VS {game_info['away']}"), height=213, hide_index=True)
     with col4:
         st.caption(game_info["away"])
-        st.dataframe(style_table(away_2plus, "2+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+        st.dataframe(style_table(away_2plus, "2+ Odds", f"VS {game_info['home']}"), height=213, hide_index=True)
 
     st.subheader("3+ Goals")
     col5, col6 = st.columns(2)
     with col5:
         st.caption(game_info["home"])
-        st.dataframe(style_table(home_3plus, "3+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+        st.dataframe(style_table(home_3plus, "3+ Odds", f"VS {game_info['away']}"), height=213, hide_index=True)
     with col6:
         st.caption(game_info["away"])
-        st.dataframe(style_table(away_3plus, "3+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+        st.dataframe(style_table(away_3plus, "3+ Odds", f"VS {game_info['home']}"), height=213, hide_index=True)
 
 # ----------------------------------------------------
 # 8. Disposals Tab (Coming Soon)
