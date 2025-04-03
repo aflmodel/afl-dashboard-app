@@ -1,8 +1,25 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
+
 
 # Set the page layout to wide
 st.set_page_config(layout="wide")
+# Custom page background style
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #FFF8F0; /* very soft orange */
+    }
+    section[data-testid="stSidebar"] {
+        background-color: #eaf6ff;  /* pale light blue */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # ----------------------------------------------------
 # 1. Mapping: Full Game Name -> Actual Sheet Name
@@ -82,11 +99,21 @@ game_info_mapping = {
 }
 
 # ----------------------------------------------------
-# 3. Sidebar: Game Selection
+# 3. Sidebar
 # ----------------------------------------------------
+
+# Logo ---
+st.sidebar.image("logo.png", use_container_width=True)
+
+
+
+
+# Game Selection
+# ----------------------------------------------------
+
 selected_game = st.sidebar.selectbox("Select a game", game_names)
 # ----------------------------------------------------
-# 3a. Sidebar: BMC
+# Sidebar: BMC
 # ----------------------------------------------------
 st.sidebar.markdown("---")
 st.sidebar.markdown("☕️ **Support the project**")
@@ -104,8 +131,6 @@ game_info = game_info_mapping.get(selected_game, {
 # ----------------------------------------------------
 excel_file = "Export.xlsx"
 # header=None prevents pandas from treating the first row as column names.
-
-st.write("Trying to load sheet:", sheet_name)
 
 df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
 
@@ -158,11 +183,30 @@ def style_table(df, odds_col, vs_col):
     })
 
 # ----------------------------------------------------
-# 8. Display the Dashboard
+# 8. Select Dashboard Tab (Goalscorer or Disposals)
 # ----------------------------------------------------
-st.title("AFL Goalscorer Dashboard")
+dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
 
+# ----------------------------------------------------
+# 9. Display Selected Dashboard
+# ----------------------------------------------------
+st.title("AFL Edge Dashboard")
+
+# Fetch API key securely
+api_key = st.secrets["openweather_api_key"]
+
+# Get weather forecast
+weather_line = get_weather_forecast(game_info["city"], game_info["date"], api_key)
+
+# Game day forecast
+st.markdown(f"**Game Day Forecast:** {weather_line}")
+
+# Game title
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
+
+# Game day forecast
+st.markdown(f"**Game Day Forecast:** {weather_line}")
+
 col_perc_left, col_perc_right = st.columns(2)
 with col_perc_left:
     st.markdown(f"**{game_info['home']}:** {game_info['home_percent']}")
@@ -171,32 +215,42 @@ with col_perc_right:
 
 st.write("---")  # Horizontal rule
 
-# Anytime Goal Scorer (AGS)
-st.subheader("Anytime Goal Scorer (AGS)")
-col1, col2 = st.columns(2)
-with col1:
-    st.caption(f"{game_info['home']}")
-    st.dataframe(style_table(home_ags, "AGS Odds", f"VS {game_info['away']}"), height=250, hide_index=True)
-with col2:
-    st.caption(f"{game_info['away']}")
-    st.dataframe(style_table(away_ags, "AGS Odds", f"VS {game_info['home']}"), height=250, hide_index=True)
 
-# 2+ Goals
-st.subheader("2+ Goals")
-col3, col4 = st.columns(2)
-with col3:
-    st.caption(f"{game_info['home']}")
-    st.dataframe(style_table(home_2plus, "2+ Odds", f"VS {game_info['away']}"), height=250, hide_index=True)
-with col4:
-    st.caption(f"{game_info['away']}")
-    st.dataframe(style_table(away_2plus, "2+ Odds", f"VS {game_info['home']}"), height=250, hide_index=True)
 
-# 3+ Goals
-st.subheader("3+ Goals")
-col5, col6 = st.columns(2)
-with col5:
-    st.caption(f"{game_info['home']}")
-    st.dataframe(style_table(home_3plus, "3+ Odds", f"VS {game_info['away']}"), height=250, hide_index=True)
-with col6:
-    st.caption(f"{game_info['away']}")
-    st.dataframe(style_table(away_3plus, "3+ Odds", f"VS {game_info['home']}"), height=250, hide_index=True)
+# ----------------------------------------------------
+# Show GOALSCORER Dashboard
+# ----------------------------------------------------
+if dashboard_tab == "Goalscorer":
+    st.subheader("Anytime Goal Scorer (AGS)")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.caption(f"{game_info['home']}")
+        st.dataframe(style_table(home_ags, "AGS Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+    with col2:
+        st.caption(f"{game_info['away']}")
+        st.dataframe(style_table(away_ags, "AGS Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+
+    st.subheader("2+ Goals")
+    col3, col4 = st.columns(2)
+    with col3:
+        st.caption(f"{game_info['home']}")
+        st.dataframe(style_table(home_2plus, "2+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+    with col4:
+        st.caption(f"{game_info['away']}")
+        st.dataframe(style_table(away_2plus, "2+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+
+    st.subheader("3+ Goals")
+    col5, col6 = st.columns(2)
+    with col5:
+        st.caption(f"{game_info['home']}")
+        st.dataframe(style_table(home_3plus, "3+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+    with col6:
+        st.caption(f"{game_info['away']}")
+        st.dataframe(style_table(away_3plus, "3+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+
+# ----------------------------------------------------
+# Show DISPOSALS Dashboard (Coming Soon)
+# ----------------------------------------------------
+elif dashboard_tab == "Disposals":
+    st.subheader("Disposals Dashboard")
+    st.info("This section will display player disposals once integrated.")
