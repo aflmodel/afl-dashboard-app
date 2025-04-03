@@ -150,20 +150,28 @@ venue_display = (
 )
 
 # Only show weather if date is close
-if (game_info["date"] - datetime.today().date()).days <= 5:
-    raw_forecast = get_weather_forecast(weather_city, game_info["date"], api_key)
-    
-    # Safely lower-case description for emoji logic
-    desc = raw_forecast.lower() if isinstance(raw_forecast, str) else ""
-    emoji = "☀️" if "clear" in desc else "🌧️" if "rain" in desc else "🌤️"
-    
-    # Insert venue-friendly label in place of city
-    if "·" in raw_forecast:
-        weather_line = emoji + " " + raw_forecast.rsplit("·", 1)[0] + f"· {venue_display}"
+try:
+    if (game_info["date"] - datetime.today().date()).days <= 5:
+        raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"], api_key)
+        
+        if isinstance(raw_forecast, str):
+            desc = raw_forecast.lower()
+            emoji = "☀️" if "clear" in desc else "🌧️" if "rain" in desc else "🌤️"
+            
+            # Replace the city in the display with nicer venue name
+            if "·" in raw_forecast:
+                weather_line = emoji + " " + raw_forecast.rsplit("·", 1)[0] + f"· {venue_display}"
+            else:
+                weather_line = emoji + " " + raw_forecast
+        else:
+            weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (forecast unavailable)"
     else:
-        weather_line = emoji + " " + raw_forecast
-else:
-    weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
+        weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
+except Exception as e:
+    weather_line = f"Weather unavailable – {venue_display}"
+
+# ✅ Show the weather on the page
+st.markdown(f"**Game Day Forecast:** {weather_line}")
 
 
 col1, col2 = st.columns(2)
