@@ -18,7 +18,7 @@ st.markdown("""
         background-color: #FFF8F0;
     }
     section[data-testid="stSidebar"] {
-        background-color: #f5fbff;
+        background-color: #faf9f6;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -198,8 +198,57 @@ if dashboard_tab == "Goalscorer":
         st.dataframe(style_table(away_3plus, "3+ Odds", f"VS {game_info['home']}"), height=213, hide_index=True)
 
 # ----------------------------------------------------
-# 8. Disposals Tab (Coming Soon)
+# 8. Disposals Tab 
 # ----------------------------------------------------
 elif dashboard_tab == "Disposals":
     st.subheader("Disposals Dashboard")
-    st.info("This section will display player disposals once integrated.")
+
+    
+# Load the ExportDisposals sheet for this game
+disposals_sheet = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
+
+# Extract 15+, 20+, 25+ tables
+home_15 = disposals_sheet.iloc[3:8, 1:5]
+away_15 = disposals_sheet.iloc[3:8, 8:12]
+home_20 = disposals_sheet.iloc[10:15, 1:5]
+away_20 = disposals_sheet.iloc[10:15, 8:12]
+home_25 = disposals_sheet.iloc[17:22, 1:5]
+away_25 = disposals_sheet.iloc[17:22, 8:12]
+
+# Rename columns
+home_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
+away_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
+home_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['away']}"]
+away_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['home']}"]
+home_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
+away_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
+
+# 15+ Disposals
+st.subheader("15+ Disposals")
+col1, col2 = st.columns(2)
+with col1:
+    st.caption(game_info["home"])
+    st.dataframe(style_table(home_15, "15+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+with col2:
+    st.caption(game_info["away"])
+    st.dataframe(style_table(away_15, "15+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+
+# 20+ Disposals
+st.subheader("20+ Disposals")
+col3, col4 = st.columns(2)
+with col3:
+    st.caption(game_info["home"])
+    st.dataframe(style_table(home_20, "20+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+with col4:
+    st.caption(game_info["away"])
+    st.dataframe(style_table(away_20, "20+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
+
+# 25+ Disposals
+st.subheader("25+ Disposals")
+col5, col6 = st.columns(2)
+with col5:
+    st.caption(game_info["home"])
+    st.dataframe(style_table(home_25, "25+ Odds", f"VS {game_info['away']}"), height=215, hide_index=True)
+with col6:
+    st.caption(game_info["away"])
+    st.dataframe(style_table(away_25, "25+ Odds", f"VS {game_info['home']}"), height=215, hide_index=True)
