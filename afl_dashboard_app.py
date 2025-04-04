@@ -6,22 +6,38 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import requests
+st.set_page_config(page_title="THE MODEL | Built for Punters", layout="wide")
 
 # ----------------------------------------------------
 # 0. Page Setup & Styling
 # ----------------------------------------------------
-st.set_page_config(layout="wide")
-
 st.markdown("""
     <style>
     .stApp {
         background-color: #FFF8F0;
     }
+
     section[data-testid="stSidebar"] {
         background-color: #faf9f6;
     }
+
+    /* Better fix for long selectbox dropdowns */
+    div[role="listbox"] {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+}
+
+    }
+
+    /* Optional: tweak the dropdown font size or spacing */
+    .css-1wa3eu0 {
+        font-size: 13px;
+    }
     </style>
 """, unsafe_allow_html=True)
+
+
+
 
 # ----------------------------------------------------
 # 1. Weather Forecast Function
@@ -88,13 +104,34 @@ for sheet in sheet_names:
 # ----------------------------------------------------
 # 3. Sidebar Layout
 # ----------------------------------------------------
-st.sidebar.image("logo.png", use_container_width=True)
+import streamlit.components.v1 as components
 
-selected_game = st.sidebar.selectbox("Select a game", list(game_name_mapping.keys()))
+with st.sidebar:
+    # Logo
+    st.image("logo.png", use_container_width=True)
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("☕️ **Support the project**")
-st.sidebar.markdown("[Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
+    # Game dropdown
+    selected_game = st.selectbox("Select a game", list(game_name_mapping.keys()))
+
+    # Support section
+    st.markdown("---")
+    st.markdown("🎯 **Support The Model**")
+    st.markdown("💖 [Become a Patron](https://www.patreon.com/The_Model)")
+    st.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
+
+    # Email section
+    st.markdown("---")
+    st.markdown("📬 **Stay in touch**")
+    st.caption("Join the mailing list to get notified when each round goes live.")
+
+    components.iframe(
+        "https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1",
+        height=130,
+        scrolling=False
+    )
+
+
+
 
 # ----------------------------------------------------
 # 4. Load Selected Game Data
@@ -126,58 +163,65 @@ away_3plus.columns = ["Players", "Edge", "3+ Odds", f"VS {game_info['home']}"]
 # ----------------------------------------------------
 # 5. Styling Function
 # ----------------------------------------------------
+
+def highlight_positive_edge(row):
+    edge = row["Edge"]
+    if pd.notnull(edge) and edge > 0:
+        return ["background-color: #e6ffe6"] * len(row)  # very light green
+    else:
+        return [""] * len(row)
+
 def style_table(df, odds_col, vs_col):
     return df.style.format({
         "Edge": lambda x: f"{x*100:.2f}%" if pd.notnull(x) else "",
         odds_col: lambda x: f"${x:.2f}" if pd.notnull(x) else "",
         vs_col: lambda x: f"{x*100:.2f}%" if pd.notnull(x) else ""
-    })
+    }).apply(highlight_positive_edge, axis=1)
+
 
 # ----------------------------------------------------
 # 6. Dashboard Layout
 # ----------------------------------------------------
+
 dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
 st.title("AFL Dashboard")
 
-# Game Title & Forecast
-api_key = st.secrets["openweather_api_key"]
+# Game Title
+st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
 
-# Use separate city name for weather (Melbourne if Marvel)
-weather_city = game_info["weather_city"]
+# Weather Forecast Setup
+api_key = st.secrets["openweather_api_key"]
 venue_display = (
     "Melbourne (Marvel Stadium)" if game_info["city"].lower() == "marvel"
     else game_info["city"]
 )
 
-# Only show weather if date is close
 try:
     if (game_info["date"] - datetime.today().date()).days <= 5:
         raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"], api_key)
-        
+
         if isinstance(raw_forecast, str):
             desc = raw_forecast.lower()
             emoji = "☀️" if "clear" in desc else "🌧️" if "rain" in desc else "🌤️"
-            
-            # Replace the city in the display with nicer venue name
+
             if "·" in raw_forecast:
-                weather_line = emoji + " " + raw_forecast.rsplit("·", 1)[0] + f"· {venue_display}"
+                weather_line = f"{emoji} " + raw_forecast.rsplit("·", 1)[0] + f"· {venue_display}"
             else:
-                weather_line = emoji + " " + raw_forecast
+                weather_line = f"{emoji} " + raw_forecast
         else:
             weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (forecast unavailable)"
     else:
         weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
-except Exception as e:
+except Exception:
     weather_line = f"Weather unavailable – {venue_display}"
 
-# ✅ Show the weather on the page
-st.markdown(f"**Game Day Forecast:** {weather_line}")
+# Display the weather forecast
+st.markdown(weather_line)
+
+# Divider
+st.markdown("---")
 
 
-col1, col2 = st.columns(2)
-col1.markdown(f"**{game_info['home']}:** {game_info['home_percent']}")
-col2.markdown(f"**{game_info['away']}:** {game_info['away_percent']}")
-st.write("---")
 
 # ----------------------------------------------------
 # 7. Goalscorer Dashboard
@@ -234,32 +278,32 @@ elif dashboard_tab == "Disposals":
     home_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
     away_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
 
-# 15+ Disposals
-st.subheader("15+ Disposals")
-col1, col2 = st.columns(2)
-with col1:
-    st.caption(game_info["home"])
-    st.dataframe(style_table(home_15, "15+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
-with col2:
-    st.caption(game_info["away"])
-    st.dataframe(style_table(away_15, "15+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
+    # 15+ Disposals
+    st.subheader("15+ Disposals")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.caption(game_info["home"])
+        st.dataframe(style_table(home_15, "15+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
+    with col2:
+        st.caption(game_info["away"])
+        st.dataframe(style_table(away_15, "15+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
 
-# 20+ Disposals
-st.subheader("20+ Disposals")
-col3, col4 = st.columns(2)
-with col3:
-    st.caption(game_info["home"])
-    st.dataframe(style_table(home_20, "20+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
-with col4:
-    st.caption(game_info["away"])
-    st.dataframe(style_table(away_20, "20+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
+    # 20+ Disposals
+    st.subheader("20+ Disposals")
+    col3, col4 = st.columns(2)
+    with col3:
+        st.caption(game_info["home"])
+        st.dataframe(style_table(home_20, "20+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
+    with col4:
+        st.caption(game_info["away"])
+        st.dataframe(style_table(away_20, "20+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
 
-# 25+ Disposals
-st.subheader("25+ Disposals")
-col5, col6 = st.columns(2)
-with col5:
-    st.caption(game_info["home"])
-    st.dataframe(style_table(home_25, "25+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
-with col6:
-    st.caption(game_info["away"])
-    st.dataframe(style_table(away_25, "25+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
+    # 25+ Disposals
+    st.subheader("25+ Disposals")
+    col5, col6 = st.columns(2)
+    with col5:
+        st.caption(game_info["home"])
+        st.dataframe(style_table(home_25, "25+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
+    with col6:
+        st.caption(game_info["away"])
+        st.dataframe(style_table(away_25, "25+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
