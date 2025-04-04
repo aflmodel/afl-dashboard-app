@@ -166,10 +166,14 @@ away_3plus.columns = ["Players", "Edge", "3+ Odds", f"VS {game_info['home']}"]
 
 def highlight_positive_edge(row):
     edge = row["Edge"]
-    if pd.notnull(edge) and edge > 0:
-        return ["background-color: #e6ffe6"] * len(row)  # very light green
+    if pd.notnull(edge):
+        if edge > 0:
+            return ["background-color: #e9f9ec"] * len(row)  # light green
+        else:
+            return ["background-color: #faeaea"] * len(row)  # light red
     else:
         return [""] * len(row)
+
 
 def style_table(df, odds_col, vs_col):
     return df.style.format({
