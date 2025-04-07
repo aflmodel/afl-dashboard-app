@@ -179,7 +179,6 @@ def style_table(df, odds_col, vs_col):
     return df.style.format({
         "Edge": lambda x: f"{x*100:.2f}%" if pd.notnull(x) else "",
         odds_col: lambda x: f"${x:.2f}" if pd.notnull(x) else "",
-        vs_col: lambda x: f"{x*100:.2f}%" if pd.notnull(x) else ""
     }).apply(highlight_positive_edge, axis=1)
 
 
