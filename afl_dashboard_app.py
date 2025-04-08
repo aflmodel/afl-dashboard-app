@@ -210,7 +210,7 @@ def style_table(df, odds_col, vs_col):
 # ----------------------------------------------------
 
 dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
-st.title("AFL Dashboard")
+st.title("AFL Dashboard ✅")  # change from previous version
 
 # Game Title
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
