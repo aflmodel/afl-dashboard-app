@@ -176,10 +176,16 @@ def highlight_positive_edge(row):
 
 
 def style_table(df, odds_col, vs_col):
-    return df.style.format({
-        "Edge": lambda x: f"{x*100:.2f}%" if pd.notnull(x) else "",
-        odds_col: lambda x: f"${x:.2f}" if pd.notnull(x) else "",
-    }).apply(highlight_positive_edge, axis=1)
+    return (
+        df.style
+        .format({
+            "Edge": lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else x,
+            odds_col: lambda x: f"${x:.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x,
+            vs_col: lambda x: x  # emoji or string, no format
+        })
+        .apply(highlight_positive_edge, axis=1)
+        .set_properties(**{"text-align": "center"}, subset=[vs_col])
+    )
 
 
 # ----------------------------------------------------
