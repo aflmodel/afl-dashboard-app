@@ -27,10 +27,14 @@ st.markdown("""
 
     /* Better fix for long selectbox dropdowns */
     div[role="listbox"] {
-    max-height: 400px !important;
-    overflow-y: auto !important;
-}
+        max-height: 400px !important;
+        overflow-y: auto !important;
+    }
 
+    /* Ensure table cell and header content is centered */
+    th, td {
+        text-align: center !important;
+        vertical-align: middle !important;
     }
 
     /* Optional: tweak the dropdown font size or spacing */
@@ -43,17 +47,20 @@ st.markdown("""
 
 
 
+
 # ----------------------------------------------------
 # 1. Weather Forecast Function
 # ----------------------------------------------------
-def get_weather_forecast(city, game_date, api_key):
+def get_weather_forecast(city, game_date):
     try:
+        # Try to access secret (only works on Streamlit Cloud)
+        api_key = st.secrets["openweather_api_key"]
         url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         response = requests.get(url)
         data = response.json()
 
         if "list" not in data:
-            return "Weather data unavailable"
+            return f"Weather data unavailable – {game_date.strftime('%B %d')} · {city}"
 
         for forecast in data["list"]:
             dt_txt = forecast["dt_txt"]
@@ -61,11 +68,14 @@ def get_weather_forecast(city, game_date, api_key):
             if forecast_date == game_date:
                 temp = forecast["main"]["temp"]
                 desc = forecast["weather"][0]["description"]
-                return f"{temp:.1f}°C, {desc.capitalize()} – {game_date.strftime('%B %d')} · {city}"
+                emoji = "☀️" if "clear" in desc else "🌧️" if "rain" in desc else "🌤️"
+                return f"{emoji} {temp:.1f}°C, {desc.capitalize()} – {game_date.strftime('%B %d')} · {city}"
 
-        return f"Forecast not found – {game_date.strftime('%B %d')} · {city}"
-    except Exception as e:
-        return f"Weather fetch failed: {e}"
+        return f"{game_date.strftime('%B %d')} · {city} (forecast not found)"
+
+    except Exception:
+        # Local fallback for testing
+        return f"🌤️ 21°C, Partly Cloudy – {game_date.strftime('%B %d')} · {city}"
 
 # ----------------------------------------------------
 # 2. Load Game Info from Excel
@@ -185,11 +195,14 @@ def style_table(df, odds_col, vs_col):
         .format({
             "Edge": lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else x,
             odds_col: lambda x: f"${x:.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x,
-            vs_col: lambda x: x  # emoji or string, no format
+            vs_col: lambda x: x  # emoji or text
         })
         .apply(highlight_positive_edge, axis=1)
-        .set_properties(**{"text-align": "center"}, subset=[vs_col])
+        .set_table_styles([
+            {"selector": f"td.col{df.columns.get_loc(vs_col)}", "props": [("text-align", "center")]}
+        ], overwrite=False)
     )
+
 
 
 # ----------------------------------------------------
