@@ -6,7 +6,11 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import requests
-st.set_page_config(page_title="THE MODEL | Built for Punters", layout="wide")
+st.set_page_config(
+    page_title="THE MODEL | Built for Punters",
+    page_icon="favicon.png",  # <- your custom icon here
+    layout="wide"
+)
 
 # ----------------------------------------------------
 # 0. Page Setup & Styling
