@@ -53,8 +53,9 @@ st.markdown("""
 # ----------------------------------------------------
 def get_weather_forecast(city, game_date):
     try:
-        # Try to access secret (only works on Streamlit Cloud)
+        # Load the API key from Streamlit secrets (only works on Streamlit Cloud)
         api_key = st.secrets["openweather_api_key"]
+
         url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         response = requests.get(url)
         data = response.json()
@@ -74,7 +75,7 @@ def get_weather_forecast(city, game_date):
         return f"{game_date.strftime('%B %d')} · {city} (forecast not found)"
 
     except Exception:
-        # Local fallback for testing
+        # Local fallback for testing or missing secrets
         return f"🌤️ 21°C, Partly Cloudy – {game_date.strftime('%B %d')} · {city}"
 
 # ----------------------------------------------------
@@ -210,7 +211,7 @@ def style_table(df, odds_col, vs_col):
 # ----------------------------------------------------
 
 dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
-st.title("AFL Dashboard ✅")  # change from previous version
+st.title("AFL Dashboard")  # Page title
 
 # Game Title
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
