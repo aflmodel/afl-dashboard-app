@@ -53,8 +53,15 @@ st.markdown("""
 # ----------------------------------------------------
 def get_weather_forecast(city, game_date):
     try:
-        # Load the API key from Streamlit secrets (only works on Streamlit Cloud)
-        api_key = st.secrets["openweather_api_key"]
+        # Load API key (from secrets in prod, fallback locally)
+        api_key = None
+        try:
+            api_key = st.secrets["openweather_api_key"]
+        except:
+            api_key = None  # or fallback to a hardcoded test key
+
+        if not api_key:
+            return f"🌤️ (local mode – no API key)"
 
         url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         response = requests.get(url)
@@ -74,9 +81,8 @@ def get_weather_forecast(city, game_date):
 
         return f"{game_date.strftime('%B %d')} · {city} (forecast not found)"
 
-    except Exception:
-        # Local fallback for testing or missing secrets
-        return f"🌤️ 21°C, Partly Cloudy – {game_date.strftime('%B %d')} · {city}"
+    except Exception as e:
+        return f"Weather unavailable – {city} ({str(e)})"
 
 # ----------------------------------------------------
 # 2. Load Game Info from Excel
