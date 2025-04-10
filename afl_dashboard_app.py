@@ -212,7 +212,6 @@ st.title("AFL Dashboard")  # Page title
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
 
 # Weather Forecast Setup
-api_key = st.secrets["openweather_api_key"]
 venue_display = (
     "Melbourne (Marvel Stadium)" if game_info["city"].lower() == "marvel"
     else game_info["city"]
@@ -220,25 +219,21 @@ venue_display = (
 
 try:
     if (game_info["date"] - datetime.today().date()).days <= 5:
-        raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"], api_key)
+        # DEBUG: print city and date to help diagnose issues
+        st.text(f"DEBUG: weather_city = {game_info['weather_city']}, date = {game_info['date']}")
 
-        if isinstance(raw_forecast, str):
-            desc = raw_forecast.lower()
-            emoji = "☀️" if "clear" in desc else "🌧️" if "rain" in desc else "🌤️"
+        raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"])
 
-            if "·" in raw_forecast:
-                weather_line = f"{emoji} " + raw_forecast.rsplit("·", 1)[0] + f"· {venue_display}"
-            else:
-                weather_line = f"{emoji} " + raw_forecast
-        else:
-            weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (forecast unavailable)"
+        # Show the full forecast string as-is
+        weather_line = raw_forecast
     else:
         weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
-except Exception:
-    weather_line = f"Weather unavailable – {venue_display}"
+except Exception as e:
+    weather_line = f"⚠️ Weather failed: {type(e).__name__} – {e} · {venue_display}"
 
 # Display the weather forecast
 st.markdown(weather_line)
+
 
 # Divider
 st.markdown("---")
