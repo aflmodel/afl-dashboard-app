@@ -53,22 +53,17 @@ st.markdown("""
 # ----------------------------------------------------
 def get_weather_forecast(city, game_date):
     try:
-        # Load API key (from secrets in prod, fallback locally)
-        api_key = None
-        try:
-            api_key = st.secrets["openweather_api_key"]
-        except:
-            api_key = None  # or fallback to a hardcoded test key
-
-        if not api_key:
-            return f"🌤️ (local mode – no API key)"
-
+        api_key = st.secrets["openweather_api_key"]
         url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         response = requests.get(url)
         data = response.json()
 
+        # DEBUGGING: Show full API response
+        if st.secrets.get("debug_weather", False):
+            st.write("Weather API response:", data)
+
         if "list" not in data:
-            return f"Weather data unavailable – {game_date.strftime('%B %d')} · {city}"
+            return f"⚠️ Weather data unavailable – {game_date.strftime('%B %d')} · {city}"
 
         for forecast in data["list"]:
             dt_txt = forecast["dt_txt"]
@@ -82,7 +77,8 @@ def get_weather_forecast(city, game_date):
         return f"{game_date.strftime('%B %d')} · {city} (forecast not found)"
 
     except Exception as e:
-        return f"Weather unavailable – {city} ({str(e)})"
+        return f"⚠️ Weather fetch failed: {e}"
+
 
 # ----------------------------------------------------
 # 2. Load Game Info from Excel
