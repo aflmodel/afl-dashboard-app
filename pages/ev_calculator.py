@@ -10,9 +10,10 @@ from components.sidebar import render_sidebar
 # ----------------------------------------------------
 st.set_page_config(
     page_title="EV Calculator | The Model",
-    page_icon="favicon.png",
+    page_icon="../favicon.png",  # point to root-level image
     layout="wide"
 )
+
 
 # Hide default multipage nav
 st.markdown("""
@@ -43,7 +44,7 @@ with st.sidebar:
 # ----------------------------------------------------
 # Header with icon
 # ----------------------------------------------------
-with open("favicon.png", "rb") as image_file:
+with open("../favicon.png", "rb") as image_file:
     encoded_image = base64.b64encode(image_file.read()).decode()
 
 st.markdown(f"""
