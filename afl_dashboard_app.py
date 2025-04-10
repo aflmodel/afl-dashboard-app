@@ -45,9 +45,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-
-
-
 # ----------------------------------------------------
 # 1. Weather Forecast Function
 # ----------------------------------------------------
@@ -56,14 +53,11 @@ def get_weather_forecast(city, game_date):
         api_key = st.secrets["openweather_api_key"]
         url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         response = requests.get(url)
+        response.raise_for_status()  # <-- this will raise an error for bad status codes
         data = response.json()
 
-        # DEBUGGING: Show full API response
-        if st.secrets.get("debug_weather", False):
-            st.write("Weather API response:", data)
-
         if "list" not in data:
-            return f"⚠️ Weather data unavailable – {game_date.strftime('%B %d')} · {city}"
+            return f"⚠️ Weather data unavailable (no list) – {game_date.strftime('%B %d')} · {city}"
 
         for forecast in data["list"]:
             dt_txt = forecast["dt_txt"]
@@ -77,8 +71,7 @@ def get_weather_forecast(city, game_date):
         return f"{game_date.strftime('%B %d')} · {city} (forecast not found)"
 
     except Exception as e:
-        return f"⚠️ Weather fetch failed: {e}"
-
+        return f"⚠️ Weather fetch failed: {type(e).__name__}: {e}"
 
 # ----------------------------------------------------
 # 2. Load Game Info from Excel
