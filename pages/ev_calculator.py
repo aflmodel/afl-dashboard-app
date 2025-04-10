@@ -1,6 +1,9 @@
 import streamlit as st
 import base64
-from components.sidebar import render_sidebar  # make sure sidebar.py is in root
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from components.sidebar import render_sidebar
 
 # ----------------------------------------------------
 # Page Setup
