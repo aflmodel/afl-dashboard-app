@@ -2,6 +2,33 @@ import streamlit as st
 import base64
 import os
 
+# ----------------------------------------------------
+# Page Setup & Styling
+# ----------------------------------------------------
+st.set_page_config(page_title="EV Calculator | The Model", page_icon="favicon.png", layout="wide")
+
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #FFF8F0;
+    }
+
+    section[data-testid="stSidebar"] {
+        background-color: #faf9f6;
+    }
+
+    th, td {
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+
+    .css-1wa3eu0 {
+        font-size: 13px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # Correct path to favicon (one level up from pages/)
 favicon_path = os.path.join(os.path.dirname(__file__), "..", "favicon.png")
 
