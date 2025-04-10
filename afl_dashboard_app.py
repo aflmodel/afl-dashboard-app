@@ -7,10 +7,13 @@ import pandas as pd
 from datetime import datetime
 import requests
 st.set_page_config(
-    page_title="THE MODEL | Built for Punters",
-    page_icon="favicon.png",  # <- your custom icon here
-    layout="wide"
+    page_title="The Model",
+    page_icon="favicon.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={"About": None}
 )
+
 
 # ----------------------------------------------------
 # 0. Page Setup & Styling
@@ -25,6 +28,11 @@ st.markdown("""
         background-color: #faf9f6;
     }
 
+    /* Hide the default page selector */
+    [data-testid="stSidebarNav"] {
+        display: none;
+    }
+
     /* Better fix for long selectbox dropdowns */
     div[role="listbox"] {
         max-height: 400px !important;
@@ -37,12 +45,12 @@ st.markdown("""
         vertical-align: middle !important;
     }
 
-    /* Optional: tweak the dropdown font size or spacing */
     .css-1wa3eu0 {
         font-size: 13px;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 # ----------------------------------------------------
@@ -114,32 +122,8 @@ for sheet in sheet_names:
 # ----------------------------------------------------
 # 3. Sidebar Layout
 # ----------------------------------------------------
-import streamlit.components.v1 as components
-
-with st.sidebar:
-    # Logo
-    st.image("logo.png", use_container_width=True)
-
-    # Game dropdown
-    selected_game = st.selectbox("Select a game", list(game_name_mapping.keys()))
-
-    # Support section
-    st.markdown("---")
-    st.markdown("🎯 **Support The Model**")
-    st.markdown("💖 [Become a Patron](https://www.patreon.com/The_Model)")
-    st.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
-
-    # Email section
-    st.markdown("---")
-    st.markdown("📬 **Stay in touch**")
-    st.caption("Join the mailing list to get notified when each round goes live.")
-
-    components.iframe(
-        "https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1",
-        height=130,
-        scrolling=False
-    )
-
+from components.sidebar import render_sidebar
+selected_game = render_sidebar(game_name_mapping)
 
 
 
@@ -219,9 +203,7 @@ venue_display = (
 
 try:
     if (game_info["date"] - datetime.today().date()).days <= 5:
-        # DEBUG: print city and date to help diagnose issues
-        st.text(f"DEBUG: weather_city = {game_info['weather_city']}, date = {game_info['date']}")
-
+        
         raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"])
 
         # Show the full forecast string as-is
