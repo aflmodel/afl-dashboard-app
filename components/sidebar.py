@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 def render_sidebar(game_name_mapping=None):
-    st.image("../logo.png", use_container_width=True)
+    st.image("logo.png", use_container_width=True)
 
 
     # If game dropdown is needed (on AFL Dashboard page)
