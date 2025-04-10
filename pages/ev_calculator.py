@@ -1,6 +1,6 @@
 import streamlit as st
 import base64
-from sidebar import render_sidebar  # make sure sidebar.py is in root
+from components.sidebar import render_sidebar  # make sure sidebar.py is in root
 
 # ----------------------------------------------------
 # Page Setup
