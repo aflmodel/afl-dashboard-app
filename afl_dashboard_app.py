@@ -14,6 +14,8 @@ st.set_page_config(
     page_icon="favicon.png",
     layout="wide"
 )
+st.info("✅ App started successfully – debug marker")
+
 
 # 2. Styling
 st.markdown("""
