@@ -6,6 +6,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import requests
+import streamlit.components.v1 as components  # needed for the iframe in the sidebar
 
 st.set_page_config(
     page_title="The Model",
@@ -117,9 +118,37 @@ for sheet in sheet_names:
         print(f"Error processing {sheet}: {e}")
 
 # ----------------------------------------------------
-# 3. Sidebar Layout
+# 3. Sidebar Layout (Inline Code)
 # ----------------------------------------------------
-from components.sidebar import render_sidebar
+# All sidebar code is now placed here, without using an external components folder.
+def render_sidebar(game_name_mapping=None):
+    # Display the logo at the top.
+    st.image("logo.png", use_container_width=True)
+    
+    # Optional: if a game mapping is provided, let the user select one.
+    selected_game = None
+    if game_name_mapping:
+        selected_game = st.selectbox("Select a game", list(game_name_mapping.keys()))
+    
+    # Support links.
+    st.markdown("---")
+    st.markdown("🎯 **Support The Model**")
+    st.markdown("💖 [Become a Patron](https://www.patreon.com/The_Model)")
+    st.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
+    
+    # Contact/Stay in touch area.
+    st.markdown("---")
+    st.markdown("📬 **Stay in touch**")
+    st.caption("Join the mailing list to get notified when each round goes live.")
+    components.iframe(
+        "https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1",
+        height=130,
+        scrolling=False
+    )
+    
+    return selected_game
+
+# Call the inline sidebar function and get the selected game.
 selected_game = render_sidebar(game_name_mapping)
 
 # ----------------------------------------------------
@@ -168,7 +197,7 @@ def style_table(df, odds_col, vs_col):
         .format({
             "Edge": lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else x,
             odds_col: lambda x: f"${x:.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x,
-            vs_col: lambda x: x  # emoji or text
+            vs_col: lambda x: x
         })
         .apply(highlight_positive_edge, axis=1)
         .set_table_styles([
