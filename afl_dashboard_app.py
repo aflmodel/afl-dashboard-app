@@ -115,7 +115,8 @@ for sheet in sheet_names:
 # 3. Sidebar Layout (Inline Code)
 # ----------------------------------------------------
 def render_sidebar(game_name_mapping=None):
-    sb = st.sidebar  # alias for clarity
+    sb = st.sidebar  # alias for readability
+
     sb.image("logo.png", use_container_width=True)
     
     selected_game = None
@@ -131,18 +132,19 @@ def render_sidebar(game_name_mapping=None):
     sb.markdown("📬 **Stay in touch**")
     sb.caption("Join the mailing list to get notified when each round goes live.")
     
-    # Use a with block on the sidebar to place the iframe
-    with sb:
-        components.iframe(
-            "https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1",
-            height=130,
-            scrolling=False
-        )
+    # Use a markdown call with HTML to embed the iframe for the mailing list widget.
+    sb.markdown("""
+        <iframe src="https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1" 
+                height="130" 
+                scrolling="no" 
+                style="border:none;width:100%;">
+        </iframe>
+    """, unsafe_allow_html=True)
     
     return selected_game
 
-# Call the inline sidebar function
 selected_game = render_sidebar(game_name_mapping)
+
 
 
 # ----------------------------------------------------
