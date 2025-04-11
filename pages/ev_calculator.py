@@ -88,3 +88,22 @@ else:
     st.info("➖ Neutral EV — breakeven.")
 
 st.caption("Note: This tool assumes fixed odds and no commission.")
+
+# ----------------------------------------------------
+# Kelly Criterion Staking
+# ----------------------------------------------------
+st.markdown("---")
+st.subheader("Staking Suggestion (Kelly)")
+
+kelly_fraction = st.radio(
+    "Select Kelly Fraction",
+    options=[0.1, 0.25, 0.5, 1.0],
+    format_func=lambda x: f"{int(x * 100)}% Kelly",
+    horizontal=True
+)
+
+edge = (odds * prob_decimal - 1)
+kelly_stake = stake * edge / (odds - 1)
+recommended_stake = max(0, kelly_stake * kelly_fraction)
+
+st.metric("Suggested Stake", f"${recommended_stake:.2f}")

@@ -123,8 +123,9 @@ for sheet in sheet_names:
 # 3. Sidebar Layout
 # ----------------------------------------------------
 from components.sidebar import render_sidebar
-selected_game = render_sidebar(game_name_mapping)
 
+with st.sidebar:
+    selected_game = render_sidebar(game_name_mapping)
 
 
 # ----------------------------------------------------
