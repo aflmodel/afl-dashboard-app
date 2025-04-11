@@ -38,8 +38,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Sidebar
-with st.sidebar:
-    render_sidebar()
+render_sidebar()
 
 # ----------------------------------------------------
 # Header with icon

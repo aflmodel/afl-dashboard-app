@@ -6,6 +6,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import requests
+
 st.set_page_config(
     page_title="The Model",
     page_icon="favicon.png",
@@ -123,9 +124,7 @@ for sheet in sheet_names:
 # 3. Sidebar Layout
 # ----------------------------------------------------
 from components.sidebar import render_sidebar
-
-with st.sidebar:
-    selected_game = render_sidebar(game_name_mapping)
+selected_game = render_sidebar(game_name_mapping)
 
 
 # ----------------------------------------------------
