@@ -6,8 +6,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import requests
-import streamlit.components.v1 as components  # needed for the iframe in the sidebar
-
 st.set_page_config(
     page_title="THE MODEL | Built for Punters",
     page_icon="favicon.png",  # <- your custom icon here
@@ -22,25 +20,30 @@ st.markdown("""
     .stApp {
         background-color: #FFF8F0;
     }
+
     section[data-testid="stSidebar"] {
         background-color: #faf9f6;
     }
+
     /* Better fix for long selectbox dropdowns */
     div[role="listbox"] {
         max-height: 400px !important;
         overflow-y: auto !important;
     }
+
     /* Ensure table cell and header content is centered */
     th, td {
         text-align: center !important;
         vertical-align: middle !important;
     }
+
     /* Optional: tweak the dropdown font size or spacing */
     .css-1wa3eu0 {
         font-size: 13px;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 # ----------------------------------------------------
 # 1. Weather Forecast Function
@@ -103,6 +106,7 @@ for sheet in sheet_names:
                 "date": pd.to_datetime(date).date() if pd.notnull(date) else None,
                 "city": str(city).strip(),
                 "weather_city": "Melbourne" if str(city).strip().lower() == "marvel" else str(city).strip()
+
             }
     except Exception as e:
         print(f"Error processing {sheet}: {e}")
@@ -110,6 +114,8 @@ for sheet in sheet_names:
 # ----------------------------------------------------
 # 3. Sidebar Layout
 # ----------------------------------------------------
+import streamlit.components.v1 as components
+
 with st.sidebar:
     # Logo
     st.image("logo.png", use_container_width=True)
@@ -128,12 +134,14 @@ with st.sidebar:
     st.markdown("📬 **Stay in touch**")
     st.caption("Join the mailing list to get notified when each round goes live.")
 
-    # Insert iframe using components.iframe() directly (inside the with block)
     components.iframe(
         "https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1",
         height=130,
         scrolling=False
     )
+
+
+
 
 # ----------------------------------------------------
 # 4. Load Selected Game Data
@@ -165,6 +173,7 @@ away_3plus.columns = ["Players", "Edge", "3+ Odds", f"VS {game_info['home']}"]
 # ----------------------------------------------------
 # 5. Styling Function
 # ----------------------------------------------------
+
 def highlight_positive_edge(row):
     edge = row["Edge"]
     if pd.notnull(edge):
@@ -174,6 +183,7 @@ def highlight_positive_edge(row):
             return ["background-color: #faeaea"] * len(row)  # light red
     else:
         return [""] * len(row)
+
 
 def style_table(df, odds_col, vs_col):
     return (
@@ -189,16 +199,20 @@ def style_table(df, odds_col, vs_col):
         ], overwrite=False)
     )
 
+
+
 # ----------------------------------------------------
 # 6. Dashboard Layout
 # ----------------------------------------------------
+
 dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
-st.title("AFL Dashboard")
+st.title("AFL Dashboard")  # Page title
 
 # Game Title
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
 
 # Weather Forecast Setup
+api_key = st.secrets["openweather_api_key"]
 venue_display = (
     "Melbourne (Marvel Stadium)" if game_info["city"].lower() == "marvel"
     else game_info["city"]
@@ -206,15 +220,30 @@ venue_display = (
 
 try:
     if (game_info["date"] - datetime.today().date()).days <= 5:
-        raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"])
-        weather_line = raw_forecast
+        raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"], api_key)
+
+        if isinstance(raw_forecast, str):
+            desc = raw_forecast.lower()
+            emoji = "☀️" if "clear" in desc else "🌧️" if "rain" in desc else "🌤️"
+
+            if "·" in raw_forecast:
+                weather_line = f"{emoji} " + raw_forecast.rsplit("·", 1)[0] + f"· {venue_display}"
+            else:
+                weather_line = f"{emoji} " + raw_forecast
+        else:
+            weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (forecast unavailable)"
     else:
         weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
 except Exception:
     weather_line = f"Weather unavailable – {venue_display}"
 
+# Display the weather forecast
 st.markdown(weather_line)
+
+# Divider
 st.markdown("---")
+
+
 
 # ----------------------------------------------------
 # 7. Goalscorer Dashboard
@@ -251,51 +280,52 @@ if dashboard_tab == "Goalscorer":
 # 8. Disposals Tab 
 # ----------------------------------------------------
 elif dashboard_tab == "Disposals":
-    try:
-        disposals_sheet = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
-        
-        # Extract tables
-        home_15 = disposals_sheet.iloc[3:8, 1:5]
-        away_15 = disposals_sheet.iloc[3:8, 8:12]
-        home_20 = disposals_sheet.iloc[10:15, 1:5]
-        away_20 = disposals_sheet.iloc[10:15, 8:12]
-        home_25 = disposals_sheet.iloc[17:22, 1:5]
-        away_25 = disposals_sheet.iloc[17:22, 8:12]
-        
-        # Rename columns
-        home_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
-        away_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
-        home_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['away']}"]
-        away_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['home']}"]
-        home_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
-        away_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
-        
-        
-        st.subheader("15+ Disposals")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.caption(game_info["home"])
-            st.dataframe(style_table(home_15, "15+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
-        with col2:
-            st.caption(game_info["away"])
-            st.dataframe(style_table(away_15, "15+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
-        
-        st.subheader("20+ Disposals")
-        col3, col4 = st.columns(2)
-        with col3:
-            st.caption(game_info["home"])
-            st.dataframe(style_table(home_20, "20+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
-        with col4:
-            st.caption(game_info["away"])
-            st.dataframe(style_table(away_20, "20+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
-        
-        st.subheader("25+ Disposals")
-        col5, col6 = st.columns(2)
-        with col5:
-            st.caption(game_info["home"])
-            st.dataframe(style_table(home_25, "25+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
-        with col6:
-            st.caption(game_info["away"])
-            st.dataframe(style_table(away_25, "25+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
-    except Exception as e:
-        st.error(f"Error loading or processing ExportDisposals.xlsx: {e}")
+    
+    # Load the ExportDisposals sheet for this game
+    disposals_sheet = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
+
+    # Extract 15+, 20+, 25+ tables
+    home_15 = disposals_sheet.iloc[3:8, 1:5]
+    away_15 = disposals_sheet.iloc[3:8, 8:12]
+    home_20 = disposals_sheet.iloc[10:15, 1:5]
+    away_20 = disposals_sheet.iloc[10:15, 8:12]
+    home_25 = disposals_sheet.iloc[17:22, 1:5]
+    away_25 = disposals_sheet.iloc[17:22, 8:12]
+
+    # Rename columns
+    home_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
+    away_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
+    home_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['away']}"]
+    away_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['home']}"]
+    home_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
+    away_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
+
+    # 15+ Disposals
+    st.subheader("15+ Disposals")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.caption(game_info["home"])
+        st.dataframe(style_table(home_15, "15+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
+    with col2:
+        st.caption(game_info["away"])
+        st.dataframe(style_table(away_15, "15+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
+
+    # 20+ Disposals
+    st.subheader("20+ Disposals")
+    col3, col4 = st.columns(2)
+    with col3:
+        st.caption(game_info["home"])
+        st.dataframe(style_table(home_20, "20+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
+    with col4:
+        st.caption(game_info["away"])
+        st.dataframe(style_table(away_20, "20+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
+
+    # 25+ Disposals
+    st.subheader("25+ Disposals")
+    col5, col6 = st.columns(2)
+    with col5:
+        st.caption(game_info["home"])
+        st.dataframe(style_table(home_25, "25+ Odds", f"VS {game_info['away']}"), height=218, hide_index=True)
+    with col6:
+        st.caption(game_info["away"])
+        st.dataframe(style_table(away_25, "25+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
