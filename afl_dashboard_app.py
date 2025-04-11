@@ -270,7 +270,7 @@ elif dashboard_tab == "Disposals":
         home_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
         away_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
         
-        # adding for deployment
+        
         st.subheader("15+ Disposals")
         col1, col2 = st.columns(2)
         with col1:
