@@ -15,7 +15,6 @@ st.set_page_config(
     menu_items={"About": None}
 )
 
-
 # ----------------------------------------------------
 # 0. Page Setup & Styling
 # ----------------------------------------------------
@@ -51,8 +50,6 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
-
 
 # ----------------------------------------------------
 # 1. Weather Forecast Function
@@ -115,7 +112,6 @@ for sheet in sheet_names:
                 "date": pd.to_datetime(date).date() if pd.notnull(date) else None,
                 "city": str(city).strip(),
                 "weather_city": "Melbourne" if str(city).strip().lower() == "marvel" else str(city).strip()
-
             }
     except Exception as e:
         print(f"Error processing {sheet}: {e}")
@@ -125,7 +121,6 @@ for sheet in sheet_names:
 # ----------------------------------------------------
 from components.sidebar import render_sidebar
 selected_game = render_sidebar(game_name_mapping)
-
 
 # ----------------------------------------------------
 # 4. Load Selected Game Data
@@ -157,7 +152,6 @@ away_3plus.columns = ["Players", "Edge", "3+ Odds", f"VS {game_info['home']}"]
 # ----------------------------------------------------
 # 5. Styling Function
 # ----------------------------------------------------
-
 def highlight_positive_edge(row):
     edge = row["Edge"]
     if pd.notnull(edge):
@@ -167,7 +161,6 @@ def highlight_positive_edge(row):
             return ["background-color: #faeaea"] * len(row)  # light red
     else:
         return [""] * len(row)
-
 
 def style_table(df, odds_col, vs_col):
     return (
@@ -183,12 +176,9 @@ def style_table(df, odds_col, vs_col):
         ], overwrite=False)
     )
 
-
-
 # ----------------------------------------------------
 # 6. Dashboard Layout
 # ----------------------------------------------------
-
 dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
 st.title("AFL Dashboard")  # Page title
 
@@ -203,24 +193,15 @@ venue_display = (
 
 try:
     if (game_info["date"] - datetime.today().date()).days <= 5:
-        
         raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"])
-
-        # Show the full forecast string as-is
-        weather_line = raw_forecast
+        weather_line = raw_forecast  # Show the full forecast string as-is
     else:
         weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
 except Exception as e:
     weather_line = f"⚠️ Weather failed: {type(e).__name__} – {e} · {venue_display}"
 
-# Display the weather forecast
 st.markdown(weather_line)
-
-
-# Divider
 st.markdown("---")
-
-
 
 # ----------------------------------------------------
 # 7. Goalscorer Dashboard
@@ -257,7 +238,6 @@ if dashboard_tab == "Goalscorer":
 # 8. Disposals Tab 
 # ----------------------------------------------------
 elif dashboard_tab == "Disposals":
-    
     # Load the ExportDisposals sheet for this game
     disposals_sheet = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
 
