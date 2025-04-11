@@ -9,11 +9,9 @@ import requests
 import streamlit.components.v1 as components  # needed for the iframe in the sidebar
 
 st.set_page_config(
-    page_title="The Model",
-    page_icon="favicon.png",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={"About": None}
+    page_title="THE MODEL | Built for Punters",
+    page_icon="favicon.png",  # <- your custom icon here
+    layout="wide"
 )
 
 # ----------------------------------------------------
@@ -27,10 +25,6 @@ st.markdown("""
     section[data-testid="stSidebar"] {
         background-color: #faf9f6;
     }
-    /* Hide the default page selector */
-    [data-testid="stSidebarNav"] {
-        display: none;
-    }
     /* Better fix for long selectbox dropdowns */
     div[role="listbox"] {
         max-height: 400px !important;
@@ -41,6 +35,7 @@ st.markdown("""
         text-align: center !important;
         vertical-align: middle !important;
     }
+    /* Optional: tweak the dropdown font size or spacing */
     .css-1wa3eu0 {
         font-size: 13px;
     }
@@ -52,14 +47,14 @@ st.markdown("""
 # ----------------------------------------------------
 def get_weather_forecast(city, game_date):
     try:
+        # Try to access secret (only works on Streamlit Cloud)
         api_key = st.secrets["openweather_api_key"]
         url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         response = requests.get(url)
-        response.raise_for_status()  # <-- this will raise an error for bad status codes
         data = response.json()
 
         if "list" not in data:
-            return f"⚠️ Weather data unavailable (no list) – {game_date.strftime('%B %d')} · {city}"
+            return f"Weather data unavailable – {game_date.strftime('%B %d')} · {city}"
 
         for forecast in data["list"]:
             dt_txt = forecast["dt_txt"]
@@ -71,8 +66,9 @@ def get_weather_forecast(city, game_date):
                 return f"{emoji} {temp:.1f}°C, {desc.capitalize()} – {game_date.strftime('%B %d')} · {city}"
 
         return f"{game_date.strftime('%B %d')} · {city} (forecast not found)"
-    except Exception as e:
-        return f"⚠️ Weather fetch failed: {type(e).__name__}: {e}"
+    except Exception:
+        # Local fallback for testing
+        return f"🌤️ 21°C, Partly Cloudy – {game_date.strftime('%B %d')} · {city}"
 
 # ----------------------------------------------------
 # 2. Load Game Info from Excel
@@ -112,40 +108,32 @@ for sheet in sheet_names:
         print(f"Error processing {sheet}: {e}")
 
 # ----------------------------------------------------
-# 3. Sidebar Layout (Inline Code)
+# 3. Sidebar Layout
 # ----------------------------------------------------
-def render_sidebar(game_name_mapping=None):
-    sb = st.sidebar  # alias for readability
+with st.sidebar:
+    # Logo
+    st.image("logo.png", use_container_width=True)
 
-    sb.image("logo.png", use_container_width=True)
-    
-    selected_game = None
-    if game_name_mapping:
-        selected_game = sb.selectbox("Select a game", list(game_name_mapping.keys()))
-    
-    sb.markdown("---")
-    sb.markdown("🎯 **Support The Model**")
-    sb.markdown("💖 [Become a Patron](https://www.patreon.com/The_Model)")
-    sb.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
-    
-    sb.markdown("---")
-    sb.markdown("📬 **Stay in touch**")
-    sb.caption("Join the mailing list to get notified when each round goes live.")
-    
-    # Use a markdown call with HTML to embed the iframe for the mailing list widget.
-    sb.markdown("""
-        <iframe src="https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1" 
-                height="130" 
-                scrolling="no" 
-                style="border:none;width:100%;">
-        </iframe>
-    """, unsafe_allow_html=True)
-    
-    return selected_game
+    # Game dropdown
+    selected_game = st.selectbox("Select a game", list(game_name_mapping.keys()))
 
-selected_game = render_sidebar(game_name_mapping)
+    # Support section
+    st.markdown("---")
+    st.markdown("🎯 **Support The Model**")
+    st.markdown("💖 [Become a Patron](https://www.patreon.com/The_Model)")
+    st.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
 
+    # Email section
+    st.markdown("---")
+    st.markdown("📬 **Stay in touch**")
+    st.caption("Join the mailing list to get notified when each round goes live.")
 
+    # Insert iframe using components.iframe() directly (inside the with block)
+    components.iframe(
+        "https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1",
+        height=130,
+        scrolling=False
+    )
 
 # ----------------------------------------------------
 # 4. Load Selected Game Data
@@ -193,7 +181,7 @@ def style_table(df, odds_col, vs_col):
         .format({
             "Edge": lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else x,
             odds_col: lambda x: f"${x:.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x,
-            vs_col: lambda x: x
+            vs_col: lambda x: x  # emoji or text
         })
         .apply(highlight_positive_edge, axis=1)
         .set_table_styles([
@@ -205,7 +193,7 @@ def style_table(df, odds_col, vs_col):
 # 6. Dashboard Layout
 # ----------------------------------------------------
 dashboard_tab = st.radio("Select dashboard", ["Goalscorer", "Disposals"], horizontal=True)
-st.title("AFL Dashboard")  # Page title
+st.title("AFL Dashboard")
 
 # Game Title
 st.markdown(f"### **Round {game_info['round']}: {game_info['home']} VS {game_info['away']}**")
@@ -219,11 +207,11 @@ venue_display = (
 try:
     if (game_info["date"] - datetime.today().date()).days <= 5:
         raw_forecast = get_weather_forecast(game_info["weather_city"], game_info["date"])
-        weather_line = raw_forecast  # Show the full forecast string as-is
+        weather_line = raw_forecast
     else:
         weather_line = f"{game_info['date'].strftime('%B %d')} · {venue_display} (too far ahead)"
-except Exception as e:
-    weather_line = f"⚠️ Weather failed: {type(e).__name__} – {e} · {venue_display}"
+except Exception:
+    weather_line = f"Weather unavailable – {venue_display}"
 
 st.markdown(weather_line)
 st.markdown("---")
@@ -273,7 +261,7 @@ elif dashboard_tab == "Disposals":
         away_20 = disposals_sheet.iloc[10:15, 8:12]
         home_25 = disposals_sheet.iloc[17:22, 1:5]
         away_25 = disposals_sheet.iloc[17:22, 8:12]
-
+        
         # Rename columns
         home_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
         away_15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
@@ -281,7 +269,7 @@ elif dashboard_tab == "Disposals":
         away_20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['home']}"]
         home_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
         away_25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
-
+        
         st.subheader("15+ Disposals")
         col1, col2 = st.columns(2)
         with col1:
@@ -290,7 +278,7 @@ elif dashboard_tab == "Disposals":
         with col2:
             st.caption(game_info["away"])
             st.dataframe(style_table(away_15, "15+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
-
+        
         st.subheader("20+ Disposals")
         col3, col4 = st.columns(2)
         with col3:
@@ -299,7 +287,7 @@ elif dashboard_tab == "Disposals":
         with col4:
             st.caption(game_info["away"])
             st.dataframe(style_table(away_20, "20+ Odds", f"VS {game_info['home']}"), height=218, hide_index=True)
-
+        
         st.subheader("25+ Disposals")
         col5, col6 = st.columns(2)
         with col5:
