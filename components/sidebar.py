@@ -3,7 +3,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 def render_sidebar(game_name_mapping=None):
-    # Everything here explicitly goes to the sidebar.
+    # All calls explicitly use st.sidebar.
     st.sidebar.image("logo.png", use_container_width=True)
     
     selected_game = None
@@ -23,10 +23,13 @@ def render_sidebar(game_name_mapping=None):
         scrolling=False
     )
     
-    # Add a spacer to push the navigation link to the bottom
-    st.sidebar.markdown("---")
+    # Spacer to push the navigation element toward the bottom.
+    st.sidebar.markdown("<br><br><br>", unsafe_allow_html=True)
     
-    # Use an absolute URL so the multipage app picks up the query parameter change
-    st.sidebar.markdown("🧮 [EV Calculator](/?page=EV_Calculator)")
+    # Instead of a markdown link, use a button to change pages.
+    if st.sidebar.button("🧮 EV Calculator"):
+        # Set the query parameter for page navigation and rerun.
+        st.experimental_set_query_params(page="EV_Calculator")
+        st.experimental_rerun()
     
     return selected_game

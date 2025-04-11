@@ -2,6 +2,7 @@ import streamlit as st
 import base64
 import sys
 import os
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from components.sidebar import render_sidebar
 
