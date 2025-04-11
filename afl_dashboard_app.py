@@ -120,27 +120,22 @@ for sheet in sheet_names:
 # ----------------------------------------------------
 # 3. Sidebar Layout (Inline Code)
 # ----------------------------------------------------
-# All sidebar code is now placed here, without using an external components folder.
 def render_sidebar(game_name_mapping=None):
-    # Display the logo at the top.
-    st.image("logo.png", use_container_width=True)
+    st.sidebar.image("logo.png", use_container_width=True)
     
-    # Optional: if a game mapping is provided, let the user select one.
     selected_game = None
     if game_name_mapping:
-        selected_game = st.selectbox("Select a game", list(game_name_mapping.keys()))
+        selected_game = st.sidebar.selectbox("Select a game", list(game_name_mapping.keys()))
     
-    # Support links.
-    st.markdown("---")
-    st.markdown("🎯 **Support The Model**")
-    st.markdown("💖 [Become a Patron](https://www.patreon.com/The_Model)")
-    st.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("🎯 **Support The Model**")
+    st.sidebar.markdown("💖 [Become a Patron](https://www.patreon.com/The_Model)")
+    st.sidebar.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
     
-    # Contact/Stay in touch area.
-    st.markdown("---")
-    st.markdown("📬 **Stay in touch**")
-    st.caption("Join the mailing list to get notified when each round goes live.")
-    components.iframe(
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("📬 **Stay in touch**")
+    st.sidebar.caption("Join the mailing list to get notified when each round goes live.")
+    st.sidebar.components.iframe(
         "https://tally.so/embed/3E6VNo?alignLeft=1&hideTitle=1&hideDescription=1&transparentBackground=1&dynamicHeight=1",
         height=130,
         scrolling=False
@@ -148,8 +143,8 @@ def render_sidebar(game_name_mapping=None):
     
     return selected_game
 
-# Call the inline sidebar function and get the selected game.
 selected_game = render_sidebar(game_name_mapping)
+
 
 # ----------------------------------------------------
 # 4. Load Selected Game Data
