@@ -185,12 +185,20 @@ if dashboard_tab == "Goalscorer":
 elif dashboard_tab == "Disposals":
     try:
         disp = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
-        h15, a15 = disp.iloc[3:8, 1:5], disp.iloc[3:8, 8:12]
-        h20, a20 = disp.iloc[10:15, 1:5], disp.iloc[10:15, 8:12]
-        h25, a25 = disp.iloc[17:22, 1:5], disp.iloc[17:22, 8:12]
 
-        for df, opp in [(h15, 'away'), (a15, 'home'), (h20, 'away'), (a20, 'home'), (h25, 'away'), (a25, 'home')]:
-            label = df.columns[2] = df.iloc[0, 2]  # rename middle column with first row value
+        # Slice and clean data
+        h15 = disp.iloc[3:8, 1:5].copy()
+        a15 = disp.iloc[3:8, 8:12].copy()
+        h20 = disp.iloc[10:15, 1:5].copy()
+        a20 = disp.iloc[10:15, 8:12].copy()
+        h25 = disp.iloc[17:22, 1:5].copy()
+        a25 = disp.iloc[17:22, 8:12].copy()
+
+        # Drop rows with all NaNs (just in case)
+        for df in [h15, a15, h20, a20, h25, a25]:
+            df.dropna(how="all", inplace=True)
+
+        # Rename columns
         h15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
         a15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
         h20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['away']}"]
@@ -198,6 +206,7 @@ elif dashboard_tab == "Disposals":
         h25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
         a25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
 
+        # Display tables
         for label, home_df, away_df, colname in [
             ("15+ Disposals", h15, a15, "15+ Odds"),
             ("20+ Disposals", h20, a20, "20+ Odds"),
@@ -207,9 +216,16 @@ elif dashboard_tab == "Disposals":
             col1, col2 = st.columns(2)
             with col1:
                 st.caption(game_info["home"])
-                st.dataframe(style_table(home_df, colname, f"VS {game_info['away']}"), height=218, hide_index=True)
+                if not home_df.empty:
+                    st.dataframe(style_table(home_df, colname, f"VS {game_info['away']}"), height=218, hide_index=True)
+                else:
+                    st.info("No data for home team.")
             with col2:
                 st.caption(game_info["away"])
-                st.dataframe(style_table(away_df, colname, f"VS {game_info['home']}"), height=218, hide_index=True)
+                if not away_df.empty:
+                    st.dataframe(style_table(away_df, colname, f"VS {game_info['home']}"), height=218, hide_index=True)
+                else:
+                    st.info("No data for away team.")
+
     except Exception as e:
         st.error(f"❌ Failed to load ExportDisposals.xlsx: {e}")
