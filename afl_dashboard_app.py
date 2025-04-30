@@ -83,7 +83,7 @@ for sheet in sheet_names:
             home, away = [x.strip() for x in game_name.split("VS")]
 
             game_info_mapping[game_name] = {
-                "round": 7,
+                "round": 8,
                 "home": home,
                 "away": away,
                 "home_percent": f"{float(home_percent) * 100:.0f}%" if pd.notnull(home_percent) else "??",
