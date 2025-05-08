@@ -59,20 +59,32 @@ def load_logo_b64(team):
             return img_to_b64(Image.open(fn).resize((30,30)))
     return None
 
-def make_table_html(df, *, add_divider=False, date_fmt="%d %b"):
+def make_table_html(df, *, add_divider=False, date_fmt="%d %b", headers=None):
     V = "1px solid rgba(0,0,0,0.2)"
     H = "1px solid rgba(0,0,0,0.2)"
     divider_css = f"border-right:{V};" if add_divider else ""
-    html = f'<table style="width:100%;border-collapse:collapse;{divider_css}"><tbody>'
-    span = f"border: {H} {V}; padding:4px; vertical-align:middle;"
-    top  = f"border-top:{H}; border-left:{V}; border-right:{V}; border-bottom:none; padding:4px; text-align:center"
-    bot  = f"border-left:{V}; border-right:{V}; border-top:none; border-bottom:{H}; padding:4px; text-align:center"
+    html = f'<table style="width:100%;border-collapse:collapse;{divider_css}">'
+
+    span = f"border-top:{H};border-bottom:{H};border-left:{V};border-right:{V};padding:4px;vertical-align:middle"
+    top  = f"border-top:{H};border-left:{V};border-right:{V};border-bottom:none;padding:4px;text-align:center"
+    bot  = f"border-left:{V};border-right:{V};border-top:none;border-bottom:{H};padding:4px;text-align:center"
+
+    # ——— render header row if provided ———
+    if headers:
+        html += "<thead><tr>"
+        for h in headers:
+            html += f'<th style="{span}">{h}</th>'
+        html += "</tr></thead>"
+
+    html += "<tbody>"
     for _, r in df.iterrows():
         ha = str(r.get("HomeAway","")).lower()
         prefix = "<strong>VS</strong>&nbsp;" if ha=="home" else "<strong>@</strong>&nbsp;"
         d = pd.to_datetime(r["GameDate"]).strftime(date_fmt)
+
         html += "<tr>"
         html += f'<td rowspan="2" style="{span}">{d}</td>'
+
         b64 = load_logo_b64(r["Opponent"])
         if b64:
             html += (
@@ -82,10 +94,12 @@ def make_table_html(df, *, add_divider=False, date_fmt="%d %b"):
             )
         else:
             html += f'<td rowspan="2" style="{span}">{prefix}{r["Opponent"]}</td>'
+
         html += f'<td style="{top}">{r["Score"]}</td>'
         html += f'<td style="{top}">{r["Line"]}</td>'
         html += f'<td style="{top}">{r["O/U"]}</td>'
         html += "</tr>"
+
         html += (
             "<tr>"
             f'<td style="{bot}">{"✅" if r["Res"]=="W" else "❌"}</td>'
@@ -93,8 +107,10 @@ def make_table_html(df, *, add_divider=False, date_fmt="%d %b"):
             f'<td style="{bot}">{"&#9650;" if r["O/U Res"].lower()=="over" else "&#9660;"}</td>'
             "</tr>"
         )
+
     html += "</tbody></table>"
     return html
+
 
 def style_table(df, odds_col, vs_col):
     def hl(r):
@@ -308,33 +324,66 @@ elif dashboard_tab == "Disposals":
         st.error(f"❌ Failed to load ExportDisposals.xlsx: {e}")
 
 # ----------------------------------------------------
+# ----------------------------------------------------
 # 12. Teams
 else:
+    # define the column headings you want
+    headers = ["Date","Game","Result","Line","O/U"]
+
     # Last 5
     st.subheader("Last 5")
     L,_,R = st.columns([1,0.02,1])
     with L:
         st.caption(f"*{game_info['home']}*")
-        df_h = overall[overall["Team"]==game_info["home"]]
-        st.markdown(make_table_html(df_h, add_divider=True, date_fmt="%d %b"),
-                    unsafe_allow_html=True)
+        df_h = overall[overall["Team"] == game_info["home"]]
+        st.markdown(
+            make_table_html(
+                df_h,
+                add_divider=True,
+                date_fmt="%d %b",
+                headers=headers
+            ),
+            unsafe_allow_html=True
+        )
     with R:
         st.caption(f"*{game_info['away']}*")
-        df_a = overall[overall["Team"]==game_info["away"]]
-        st.markdown(make_table_html(df_a, add_divider=False, date_fmt="%d %b"),
-                    unsafe_allow_html=True)
+        df_a = overall[overall["Team"] == game_info["away"]]
+        st.markdown(
+            make_table_html(
+                df_a,
+                add_divider=False,
+                date_fmt="%d %b",
+                headers=headers
+            ),
+            unsafe_allow_html=True
+        )
 
     # Last 5 at Venue
-    stadium = venue[venue["Team"]==game_info["home"]]["Venue"].iloc[0]
+    stadium = venue[venue["Team"] == game_info["home"]]["Venue"].iloc[0]
     st.subheader(f"Last 5 at {stadium}")
     L,_,R = st.columns([1,0.02,1])
     with L:
         st.caption(f"*{game_info['home']}*")
-        df_hv = venue[venue["Team"]==game_info["home"]]
-        st.markdown(make_table_html(df_hv, add_divider=True, date_fmt="%d/%m/%Y"),
-                    unsafe_allow_html=True)
+        df_hv = venue[venue["Team"] == game_info["home"]]
+        st.markdown(
+            make_table_html(
+                df_hv,
+                add_divider=True,
+                date_fmt="%d/%m/%Y",
+                headers=headers
+            ),
+            unsafe_allow_html=True
+        )
     with R:
         st.caption(f"*{game_info['away']}*")
-        df_av = venue[venue["Team"]==game_info["away"]]
-        st.markdown(make_table_html(df_av, add_divider=False, date_fmt="%d/%m/%Y"),
-                    unsafe_allow_html=True)
+        df_av = venue[venue["Team"] == game_info["away"]]
+        st.markdown(
+            make_table_html(
+                df_av,
+                add_divider=False,
+                date_fmt="%d/%m/%Y",
+                headers=headers
+            ),
+            unsafe_allow_html=True
+        )
+
