@@ -257,9 +257,53 @@ if dashboard_tab == "Goalscorer":
 # 11. Disposals
 elif dashboard_tab == "Disposals":
     try:
-        disp = pd.read_excel("ExportDisposals.xlsx",
-                             sheet_name=sheet_name, header=None)
-        # … your existing disposals slices & styling …
+        disp = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
+
+        # Slice & clean
+        h15 = disp.iloc[3:8, 1:5].copy()
+        a15 = disp.iloc[3:8, 8:12].copy()
+        h20 = disp.iloc[10:15, 1:5].copy()
+        a20 = disp.iloc[10:15, 8:12].copy()
+        h25 = disp.iloc[17:22, 1:5].copy()
+        a25 = disp.iloc[17:22, 8:12].copy()
+        for df in [h15, a15, h20, a20, h25, a25]:
+            df.dropna(how="all", inplace=True)
+
+        # Rename columns
+        h15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
+        a15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
+        h20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['away']}"]
+        a20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['home']}"]
+        h25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
+        a25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
+
+        # Display each
+        for label, home_df, away_df, colname in [
+            ("15+ Disposals", h15, a15, "15+ Odds"),
+            ("20+ Disposals", h20, a20, "20+ Odds"),
+            ("25+ Disposals", h25, a25, "25+ Odds")
+        ]:
+            st.subheader(label)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.caption(game_info["home"])
+                if not home_df.empty:
+                    st.dataframe(
+                        style_table(home_df, colname, f"VS {game_info['away']}"),
+                        height=218, hide_index=True
+                    )
+                else:
+                    st.info("No data for home team.")
+            with col2:
+                st.caption(game_info["away"])
+                if not away_df.empty:
+                    st.dataframe(
+                        style_table(away_df, colname, f"VS {game_info['home']}"),
+                        height=218, hide_index=True
+                    )
+                else:
+                    st.info("No data for away team.")
+
     except Exception as e:
         st.error(f"❌ Failed to load ExportDisposals.xlsx: {e}")
 
