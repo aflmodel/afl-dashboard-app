@@ -264,7 +264,8 @@ else:
 st.markdown("---")
 
 # ----------------------------------------------------
-# 10. Goalscorer – now showing Odds, Edge % and Adj Edge %
+# 10. Goalscorer – now showing Odds instead of BookieOdds,
+#    dropping FairOdds entirely, and hiding the index
 # ----------------------------------------------------
 if dashboard_tab == "Goalscorer":
     for label, hdf, adf in [
@@ -274,60 +275,80 @@ if dashboard_tab == "Goalscorer":
     ]:
         st.subheader(label)
         c1, c2 = st.columns(2)
-
-        # rename and pick only the 3 columns we want
-        def prep(df):
-            df = df.rename(columns={"BookieOdds":"Odds"})
-            df = df[["Player","Odds","Edge %","Adj Edge %"]]
-            # style formatting
-            sty = (
-                df.style
-                  .format({
-                      "Odds":      lambda x: f"${x:.2f}",
-                      "Edge %":    lambda x: f"{x:.1f}%",
-                      "Adj Edge %":lambda x: f"{x:.1f}%"
-                   })
-                  # color whole row by raw Edge %
-                  .apply(lambda r: ["background-color: #e9f9ec" if r["Edge %"]>0 
-                                     else "background-color: #faeaea"]*len(r), axis=1)
+        # rename + drop + pick just the four columns we want
+        def clean(df):
+            return (
+                df
+                  .rename(columns={"BookieOdds":"Odds"})
+                  .drop(columns=["FairOdds"], errors="ignore")
+                  [["Player","Odds","Edge %","Adj Edge %"]]
             )
-            return sty
-
         with c1:
             st.caption(game_info["home"])
-            st.dataframe(prep(hdf), height=218, use_container_width=True)
-
+            clean_home = clean(hdf)
+            st.dataframe(
+                style_table(clean_home, odds_col="Odds", vs_col=""),
+                height=218,
+                use_container_width=True,
+                hide_index=True
+            )
         with c2:
             st.caption(game_info["away"])
-            st.dataframe(prep(adf), height=218, use_container_width=True)
-
+            clean_away = clean(adf)
+            st.dataframe(
+                style_table(clean_away, odds_col="Odds", vs_col=""),
+                height=218,
+                use_container_width=True,
+                hide_index=True
+            )
 
 # ----------------------------------------------------
-# 11. Disposals – same + add the 30+ table
+# 11. Disposals – same treatment + add the 30+ block
 # ----------------------------------------------------
 elif dashboard_tab == "Disposals":
     for label, hdf, adf in [
         ("15+ Disposals", home_15, away_15),
         ("20+ Disposals", home_20, away_20),
         ("25+ Disposals", home_25, away_25),
-        ("30+ Disposals", home_30, away_30),
+        ("30+ Disposals", home_30, away_30),     # ← new!
     ]:
         st.subheader(label)
         c1, c2 = st.columns(2)
-
         with c1:
             st.caption(game_info["home"])
             if not hdf.empty:
-                st.dataframe(prep(hdf), height=218, use_container_width=True)
+                clean_home = (
+                    hdf
+                      .rename(columns={"BookieOdds":"Odds"})
+                      .drop(columns=["FairOdds"], errors="ignore")
+                      [["Player","Odds","Edge %","Adj Edge %"]]
+                )
+                st.dataframe(
+                    style_table(clean_home, odds_col="Odds", vs_col=""),
+                    height=218,
+                    use_container_width=True,
+                    hide_index=True
+                )
             else:
                 st.info("No data for home team.")
-
         with c2:
             st.caption(game_info["away"])
             if not adf.empty:
-                st.dataframe(prep(adf), height=218, use_container_width=True)
+                clean_away = (
+                    adf
+                      .rename(columns={"BookieOdds":"Odds"})
+                      .drop(columns=["FairOdds"], errors="ignore")
+                      [["Player","Odds","Edge %","Adj Edge %"]]
+                )
+                st.dataframe(
+                    style_table(clean_away, odds_col="Odds", vs_col=""),
+                    height=218,
+                    use_container_width=True,
+                    hide_index=True
+                )
             else:
                 st.info("No data for away team.")
+
 
 
 # ----------------------------------------------------
