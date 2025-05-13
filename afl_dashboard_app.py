@@ -269,6 +269,17 @@ def style_table(df, odds_col):
           ])
           .apply(hl, axis=1)
     )
+def prep(df):
+    """
+    Rename BookieOdds→Odds, pick just the four columns, and
+    hand off to style_table for colouring & formatting.
+    """
+    df2 = (
+        df
+        .rename(columns={"BookieOdds": "Odds"})
+        [["Player", "Odds", "Edge %", "Adj Edge %"]]
+    )
+    return style_table(df2, odds_col="Odds")
 
 
 # ----------------------------------------------------
