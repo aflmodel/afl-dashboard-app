@@ -249,12 +249,11 @@ home_20,     away_20      = parse_block("20+ Disposals")
 home_25,     away_25      = parse_block("25+ Disposals")
 home_30,     away_30      = parse_block("30+ Disposals")
 
-# ----------------------------------------------------
-# 8. Table Styling
+# ─── 8. Table Styling ──────────────────────────────────────────────────────────
 def style_table(df, odds_col):
     def hl(r):
-        # use the already‐formatted "Edge %" column for coloring
-        e = float(r["Edge %"].rstrip("%"))
+        # r["Edge %"] is already a float, so just use it directly
+        e = r["Edge %"]
         color = "#e9f9ec" if e > 0 else "#faeaea"
         return [f"background-color: {color}"] * len(r)
 
@@ -265,20 +264,11 @@ def style_table(df, odds_col):
               "Edge %":     lambda x: f"{x:.1f}%",
               "Adj Edge %": lambda x: f"{x:.1f}%"
           })
+          .set_table_styles([
+              {"selector": "th", "props": [("background-color", "#F0F4FF"), ("font-weight","bold")]}
+          ])
           .apply(hl, axis=1)
     )
-
-def prep(df):
-    """
-    Rename BookieOdds→Odds, pick just the four columns, and
-    hand off to style_table for coloring & formatting.
-    """
-    df2 = (
-        df
-        .rename(columns={"BookieOdds": "Odds"})
-        [["Player", "Odds", "Edge %", "Adj Edge %"]]
-    )
-    return style_table(df2, odds_col="Odds")
 
 
 # ----------------------------------------------------
