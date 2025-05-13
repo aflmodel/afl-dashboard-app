@@ -13,15 +13,15 @@ from PIL import Image
 # ————— Helpers —————
 @st.cache_data
 def load_fixtures():
-    xls = pd.ExcelFile("Export.xlsx")
+    xls = pd.ExcelFile("Export_simple.xlsx")
     mapping = {}
     for sheet in xls.sheet_names:
         df0 = pd.read_excel(xls, sheet_name=sheet, header=None)
-        if df0.shape[1] > 1:
-            m = df0.iat[0,1]
-            if isinstance(m, str) and "VS" in m:
-                mapping[m.strip()] = sheet
+        m = df0.iat[0, 0]             # <-- sheet name lives in A1
+        if isinstance(m, str) and "VS" in m:
+            mapping[m.strip()] = sheet
     return mapping
+
 
 @st.cache_data
 def load_stats():
@@ -150,12 +150,12 @@ fixtures = load_fixtures()
 overall, venue = load_stats()
 
 # ----------------------------------------------------
-# 4. Load Game Info
+# 4. Load Game Info (from Export_simple.xlsx)
 try:
-    xls = pd.ExcelFile("Export.xlsx")
+    xls = pd.ExcelFile("Export_simple.xlsx")
     sheet_names = xls.sheet_names
 except Exception as e:
-    st.error(f"❌ Failed to load Export.xlsx: {e}")
+    st.error(f"❌ Failed to load Export_simple.xlsx: {e}")
     st.stop()
 
 game_name_mapping = {}
@@ -164,27 +164,25 @@ game_info_mapping = {}
 for sheet in sheet_names:
     df0 = pd.read_excel(xls, sheet_name=sheet, header=None)
     try:
-        m  = df0.iat[0,1]
-        d  = df0.iat[1,3]
-        ct = df0.iat[1,4]
-        hp = df0.iat[1,2]
-        ap = df0.iat[1,11]
+        m  = df0.iat[0, 0]     # sheet name at A1
+        d  = df0.iat[1, 0]     # date at A2
+        ct = df0.iat[1, 1]     # city at B2
         if isinstance(m, str) and "VS" in m:
             gm = m.strip()
             game_name_mapping[gm] = sheet
             home, away = [x.strip() for x in gm.split("VS")]
+
             game_info_mapping[gm] = {
-                "round": 9,
-                "home": home, "away": away,
-                "home_percent": f"{float(hp)*100:.0f}%" if pd.notnull(hp) else "??",
-                "away_percent": f"{float(ap)*100:.0f}%" if pd.notnull(ap) else "??",
+                "round": 10,  # or whatever your constant is
+                "home": home,
+                "away": away,
                 "date": pd.to_datetime(d).date() if pd.notnull(d) else None,
-                "city": str(ct).strip(),
+                "city":    str(ct).strip(),
                 "weather_city": "Melbourne" if str(ct).lower()=="marvel" else str(ct).strip()
             }
     except Exception as e:
-        # <<<< fixed stray-quote here
         st.warning(f"⚠️ Error processing sheet '{sheet}': {e}")
+
 
 # ----------------------------------------------------
 # 5. Sidebar
@@ -205,26 +203,39 @@ with st.sidebar:
     )
 
 # ----------------------------------------------------
-# 6. Load Selected Game
+# 6. Load Selected Game from Export_simple.xlsx
+# ----------------------------------------------------
 sheet_name = game_name_mapping[selected_game]
 game_info  = game_info_mapping[selected_game]
-df_sheet   = pd.read_excel("Export.xlsx", sheet_name=sheet_name, header=None)
 
-# ----------------------------------------------------
-# 7. Extract AGS Tables
-home_ags   = df_sheet.iloc[3:8, 1:5]
-away_ags   = df_sheet.iloc[3:8, 8:12]
-home_2plus = df_sheet.iloc[10:15, 1:5]
-away_2plus = df_sheet.iloc[10:15, 8:12]
-home_3plus = df_sheet.iloc[17:22, 1:5]
-away_3plus = df_sheet.iloc[17:22, 8:12]
+# read the entire sheet, no header
+raw = pd.read_excel("Export_simple.xlsx", sheet_name=sheet_name, header=None)
 
-home_ags.columns   = ["Players","Edge","AGS Odds",f"VS {game_info['away']}"]
-away_ags.columns   = ["Players","Edge","AGS Odds",f"VS {game_info['home']}"]
-home_2plus.columns = ["Players","Edge","2+ Odds",f"VS {game_info['away']}"]
-away_2plus.columns = ["Players","Edge","2+ Odds",f"VS {game_info['home']}"]
-home_3plus.columns = ["Players","Edge","3+ Odds",f"VS {game_info['away']}"]
-away_3plus.columns = ["Players","Edge","3+ Odds",f"VS {game_info['home']}"]
+# helper to pull out each 5-row block for home & away
+def parse_block(label):
+    # find the two occurrences of the block label
+    idxs = list(raw.index[ raw[0]==label ])
+    if len(idxs)!=2:
+        st.error(f"Couldn’t find two '{label}' blocks in {sheet_name}")
+        return pd.DataFrame(), pd.DataFrame()
+    home_i, away_i = idxs
+    # header row is 1 row below label
+    header = list(raw.iloc[home_i+1].values)
+    # data is the next 5 rows
+    df_home = raw.iloc[home_i+2:home_i+7, :len(header)].copy()
+    df_away = raw.iloc[away_i+2:away_i+7, :len(header)].copy()
+    df_home.columns = header
+    df_away.columns = header
+    return df_home, df_away
+
+# 7. pull in all markets
+home_ags,     away_ags     = parse_block("Anytime Goalscorer")
+home_2plus,  away_2plus   = parse_block("2+ Goalscorer")
+home_3plus,  away_3plus   = parse_block("3+ Goalscorer")
+home_15,     away_15      = parse_block("15+ Disposals")
+home_20,     away_20      = parse_block("20+ Disposals")
+home_25,     away_25      = parse_block("25+ Disposals")
+home_30,     away_30      = parse_block("30+ Disposals")
 
 # ----------------------------------------------------
 # 8. Table Styling
@@ -251,77 +262,50 @@ else:
 st.markdown("---")
 
 # ----------------------------------------------------
-# 10. Goalscorer
+# 10. Goalscorer – now showing Adj Edge % instead of VS Opponent
+# ----------------------------------------------------
 if dashboard_tab == "Goalscorer":
-    for label, hdf, adf, col in [
-        ("Anytime Goal Scorer", home_ags,   away_ags,   "AGS Odds"),
-        ("2+ Goals",             home_2plus, away_2plus, "2+ Odds"),
-        ("3+ Goals",             home_3plus, away_3plus, "3+ Odds")
+    for label, hdf, adf in [
+        ("Anytime Goalscorer", home_ags, away_ags),
+        ("2+ Goalscorer",      home_2plus, away_2plus),
+        ("3+ Goalscorer",      home_3plus, away_3plus),
     ]:
         st.subheader(label)
         c1, c2 = st.columns(2)
+        # drop the Team column (we use the caption) and show the rest
+        display_cols = ["Player","FairOdds","BookieOdds","Edge %","Adj Edge %"]
         with c1:
             st.caption(game_info["home"])
-            st.dataframe(style_table(hdf, col, f"VS {game_info['away']}"),
-                         height=218, hide_index=True)
+            st.dataframe(hdf[display_cols], height=218, hide_index=True)
         with c2:
             st.caption(game_info["away"])
-            st.dataframe(style_table(adf, col, f"VS {game_info['home']}"),
-                         height=218, hide_index=True)
+            st.dataframe(adf[display_cols], height=218, hide_index=True)
 
 # ----------------------------------------------------
-# 11. Disposals
+# 11. Disposals – same + add the 30+ table
+# ----------------------------------------------------
 elif dashboard_tab == "Disposals":
-    try:
-        disp = pd.read_excel("ExportDisposals.xlsx", sheet_name=sheet_name, header=None)
-
-        # Slice & clean
-        h15 = disp.iloc[3:8, 1:5].copy()
-        a15 = disp.iloc[3:8, 8:12].copy()
-        h20 = disp.iloc[10:15, 1:5].copy()
-        a20 = disp.iloc[10:15, 8:12].copy()
-        h25 = disp.iloc[17:22, 1:5].copy()
-        a25 = disp.iloc[17:22, 8:12].copy()
-        for df in [h15, a15, h20, a20, h25, a25]:
-            df.dropna(how="all", inplace=True)
-
-        # Rename columns
-        h15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['away']}"]
-        a15.columns = ["Players", "Edge", "15+ Odds", f"VS {game_info['home']}"]
-        h20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['away']}"]
-        a20.columns = ["Players", "Edge", "20+ Odds", f"VS {game_info['home']}"]
-        h25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['away']}"]
-        a25.columns = ["Players", "Edge", "25+ Odds", f"VS {game_info['home']}"]
-
-        # Display each
-        for label, home_df, away_df, colname in [
-            ("15+ Disposals", h15, a15, "15+ Odds"),
-            ("20+ Disposals", h20, a20, "20+ Odds"),
-            ("25+ Disposals", h25, a25, "25+ Odds")
-        ]:
-            st.subheader(label)
-            col1, col2 = st.columns(2)
-            with col1:
-                st.caption(game_info["home"])
-                if not home_df.empty:
-                    st.dataframe(
-                        style_table(home_df, colname, f"VS {game_info['away']}"),
-                        height=218, hide_index=True
-                    )
-                else:
-                    st.info("No data for home team.")
-            with col2:
-                st.caption(game_info["away"])
-                if not away_df.empty:
-                    st.dataframe(
-                        style_table(away_df, colname, f"VS {game_info['home']}"),
-                        height=218, hide_index=True
-                    )
-                else:
-                    st.info("No data for away team.")
-
-    except Exception as e:
-        st.error(f"❌ Failed to load ExportDisposals.xlsx: {e}")
+    for label, hdf, adf in [
+        ("15+ Disposals", home_15, away_15),
+        ("20+ Disposals", home_20, away_20),
+        ("25+ Disposals", home_25, away_25),
+        ("30+ Disposals", home_30, away_30),     # ← new!
+    ]:
+        st.subheader(label)
+        c1, c2 = st.columns(2)
+        display_cols = ["Player","FairOdds","BookieOdds","Edge %","Adj Edge %"]
+        with c1:
+            st.caption(game_info["home"])
+            if not hdf.empty:
+                st.dataframe(hdf[display_cols], height=218, hide_index=True)
+            else:
+                st.info("No data for home team.")
+        with c2:
+            st.caption(game_info["away"])
+            if not adf.empty:
+                st.dataframe(adf[display_cols], height=218, hide_index=True)
+            else:
+                st.info("No data for away team.")
 
 # ----------------------------------------------------
 # ----------------------------------------------------
