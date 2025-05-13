@@ -63,14 +63,15 @@ def make_table_html(df, *, add_divider=False, date_fmt="%d %b", headers=None):
     V = "1px solid rgba(0,0,0,0.2)"
     H = "1px solid rgba(0,0,0,0.2)"
     divider_css = f"border-right:{V};" if add_divider else ""
-    html = f'<table style="width:100%;border-collapse:collapse;{divider_css}">'
+    # add font‐family and size to match pandas tables:
+    html = f'<table style="width:100%;border-collapse:collapse;font-family:inherit;font-size:14px;{divider_css}">'
 
     span = f"border-top:{H};border-bottom:{H};border-left:{V};border-right:{V};padding:4px;vertical-align:middle"
     top  = f"border-top:{H};border-left:{V};border-right:{V};border-bottom:none;padding:4px;text-align:center"
     bot  = f"border-left:{V};border-right:{V};border-top:none;border-bottom:{H};padding:4px;text-align:center"
 
-    # ——— render header row if provided ———
     if headers:
+        # give your <th> the same background & boldness as pandas header cells
         header_span = span + ";background-color:#F0F4FF;font-weight:bold"
         html += "<thead><tr>"
         for h in headers:
@@ -108,23 +109,32 @@ def make_table_html(df, *, add_divider=False, date_fmt="%d %b", headers=None):
             f'<td style="{bot}">{"&#9650;" if r["O/U Res"].lower()=="over" else "&#9660;"}</td>'
             "</tr>"
         )
-
     html += "</tbody></table>"
     return html
 
 
-
-def style_table(df, odds_col, vs_col):
+def style_table(df, odds_col):
     def hl(r):
-        e = r["Edge"]
-        color = "#e9f9ec" if e>0 else "#faeaea"
-        return [f"background-color: {color}"]*len(r)
+        # we color by the numeric Edge % value
+        e = float(r["Edge %"].rstrip("%"))
+        color = "#e9f9ec" if e > 0 else "#faeaea"
+        return [f"background-color: {color}"] * len(r)
+
     return (
         df.style
-          .format({"Edge":lambda x:f"{x*100:.2f}%" if pd.notnull(x) else x,
-                   odds_col:lambda x:f"${x:.2f}" if pd.notnull(x) else x})
+          .format({
+              odds_col:      lambda x: f"${x:.2f}" if pd.notnull(x) else x,
+              "Edge %":      lambda x: f"{x:.1f}%",
+              "Adj Edge %":  lambda x: f"{x:.1f}%"
+          })
+          # ensure the header row here also picks up that same light‐blue + bold style
+          .set_table_styles([
+              {"selector": "th", "props": [("background-color", "#F0F4FF"), ("font-weight","bold")]}
+          ])
           .apply(hl, axis=1)
     )
+
+
 
 # ----------------------------------------------------
 # 1. Page Setup
@@ -241,7 +251,35 @@ home_30,     away_30      = parse_block("30+ Disposals")
 
 # ----------------------------------------------------
 # 8. Table Styling
-# (style_table defined above)
+def style_table(df, odds_col):
+    def hl(r):
+        # use the already‐formatted "Edge %" column for coloring
+        e = float(r["Edge %"].rstrip("%"))
+        color = "#e9f9ec" if e > 0 else "#faeaea"
+        return [f"background-color: {color}"] * len(r)
+
+    return (
+        df.style
+          .format({
+              odds_col:     lambda x: f"${x:.2f}" if pd.notnull(x) else x,
+              "Edge %":     lambda x: f"{x:.1f}%",
+              "Adj Edge %": lambda x: f"{x:.1f}%"
+          })
+          .apply(hl, axis=1)
+    )
+
+def prep(df):
+    """
+    Rename BookieOdds→Odds, pick just the four columns, and
+    hand off to style_table for coloring & formatting.
+    """
+    df2 = (
+        df
+        .rename(columns={"BookieOdds": "Odds"})
+        [["Player", "Odds", "Edge %", "Adj Edge %"]]
+    )
+    return style_table(df2, odds_col="Odds")
+
 
 # ----------------------------------------------------
 # 9. Dashboard Layout
@@ -263,10 +301,7 @@ else:
     st.markdown(f"{game_info['date']:%B %d} · {venue_disp} (too far ahead)")
 st.markdown("---")
 
-# ----------------------------------------------------
-# 10. Goalscorer – now showing Odds instead of BookieOdds,
-#    dropping FairOdds entirely, and hiding the index
-# ----------------------------------------------------
+# ─── 10. Goalscorer – show Odds, Edge % and Adj Edge % ────────────────────
 if dashboard_tab == "Goalscorer":
     for label, hdf, adf in [
         ("Anytime Goalscorer", home_ags, away_ags),
@@ -275,81 +310,60 @@ if dashboard_tab == "Goalscorer":
     ]:
         st.subheader(label)
         c1, c2 = st.columns(2)
-        # rename + drop + pick just the four columns we want
-        def clean(df):
-            return (
-                df
-                  .rename(columns={"BookieOdds":"Odds"})
-                  .drop(columns=["FairOdds"], errors="ignore")
-                  [["Player","Odds","Edge %","Adj Edge %"]]
-            )
+
         with c1:
             st.caption(game_info["home"])
-            clean_home = clean(hdf)
             st.dataframe(
-                style_table(clean_home, odds_col="Odds", vs_col=""),
-                height=218,
-                use_container_width=True,
-                hide_index=True
-            )
-        with c2:
-            st.caption(game_info["away"])
-            clean_away = clean(adf)
-            st.dataframe(
-                style_table(clean_away, odds_col="Odds", vs_col=""),
+                prep(hdf),
                 height=218,
                 use_container_width=True,
                 hide_index=True
             )
 
-# ----------------------------------------------------
-# 11. Disposals – same treatment + add the 30+ block
-# ----------------------------------------------------
+        with c2:
+            st.caption(game_info["away"])
+            st.dataframe(
+                prep(adf),
+                height=218,
+                use_container_width=True,
+                hide_index=True
+            )
+
+
+# ─── 11. Disposals – same + add the 30+ table ──────────────────────────────
 elif dashboard_tab == "Disposals":
     for label, hdf, adf in [
         ("15+ Disposals", home_15, away_15),
         ("20+ Disposals", home_20, away_20),
         ("25+ Disposals", home_25, away_25),
-        ("30+ Disposals", home_30, away_30),     # ← new!
+        ("30+ Disposals", home_30, away_30),   # new!
     ]:
         st.subheader(label)
         c1, c2 = st.columns(2)
+
         with c1:
             st.caption(game_info["home"])
             if not hdf.empty:
-                clean_home = (
-                    hdf
-                      .rename(columns={"BookieOdds":"Odds"})
-                      .drop(columns=["FairOdds"], errors="ignore")
-                      [["Player","Odds","Edge %","Adj Edge %"]]
-                )
                 st.dataframe(
-                    style_table(clean_home, odds_col="Odds", vs_col=""),
+                    prep(hdf),
                     height=218,
                     use_container_width=True,
                     hide_index=True
                 )
             else:
                 st.info("No data for home team.")
+
         with c2:
             st.caption(game_info["away"])
             if not adf.empty:
-                clean_away = (
-                    adf
-                      .rename(columns={"BookieOdds":"Odds"})
-                      .drop(columns=["FairOdds"], errors="ignore")
-                      [["Player","Odds","Edge %","Adj Edge %"]]
-                )
                 st.dataframe(
-                    style_table(clean_away, odds_col="Odds", vs_col=""),
+                    prep(adf),
                     height=218,
                     use_container_width=True,
                     hide_index=True
                 )
             else:
                 st.info("No data for away team.")
-
-
 
 # ----------------------------------------------------
 # ----------------------------------------------------
