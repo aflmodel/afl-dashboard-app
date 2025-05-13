@@ -71,9 +71,10 @@ def make_table_html(df, *, add_divider=False, date_fmt="%d %b", headers=None):
 
     # ——— render header row if provided ———
     if headers:
+        header_span = span + ";background-color:#F0F4FF;font-weight:bold"
         html += "<thead><tr>"
         for h in headers:
-            html += f'<th style="{span}">{h}</th>'
+            html += f'<th style="{header_span}">{h}</th>'
         html += "</tr></thead>"
 
     html += "<tbody>"
@@ -110,6 +111,7 @@ def make_table_html(df, *, add_divider=False, date_fmt="%d %b", headers=None):
 
     html += "</tbody></table>"
     return html
+
 
 
 def style_table(df, odds_col, vs_col):
@@ -262,7 +264,7 @@ else:
 st.markdown("---")
 
 # ----------------------------------------------------
-# 10. Goalscorer – now showing Adj Edge % instead of VS Opponent
+# 10. Goalscorer – now showing Odds, Edge % and Adj Edge %
 # ----------------------------------------------------
 if dashboard_tab == "Goalscorer":
     for label, hdf, adf in [
@@ -272,14 +274,33 @@ if dashboard_tab == "Goalscorer":
     ]:
         st.subheader(label)
         c1, c2 = st.columns(2)
-        # drop the Team column (we use the caption) and show the rest
-        display_cols = ["Player","FairOdds","BookieOdds","Edge %","Adj Edge %"]
+
+        # rename and pick only the 3 columns we want
+        def prep(df):
+            df = df.rename(columns={"BookieOdds":"Odds"})
+            df = df[["Player","Odds","Edge %","Adj Edge %"]]
+            # style formatting
+            sty = (
+                df.style
+                  .format({
+                      "Odds":      lambda x: f"${x:.2f}",
+                      "Edge %":    lambda x: f"{x:.1f}%",
+                      "Adj Edge %":lambda x: f"{x:.1f}%"
+                   })
+                  # color whole row by raw Edge %
+                  .apply(lambda r: ["background-color: #e9f9ec" if r["Edge %"]>0 
+                                     else "background-color: #faeaea"]*len(r), axis=1)
+            )
+            return sty
+
         with c1:
             st.caption(game_info["home"])
-            st.dataframe(hdf[display_cols], height=218, hide_index=True)
+            st.dataframe(prep(hdf), height=218, use_container_width=True)
+
         with c2:
             st.caption(game_info["away"])
-            st.dataframe(adf[display_cols], height=218, hide_index=True)
+            st.dataframe(prep(adf), height=218, use_container_width=True)
+
 
 # ----------------------------------------------------
 # 11. Disposals – same + add the 30+ table
@@ -289,23 +310,25 @@ elif dashboard_tab == "Disposals":
         ("15+ Disposals", home_15, away_15),
         ("20+ Disposals", home_20, away_20),
         ("25+ Disposals", home_25, away_25),
-        ("30+ Disposals", home_30, away_30),     # ← new!
+        ("30+ Disposals", home_30, away_30),
     ]:
         st.subheader(label)
         c1, c2 = st.columns(2)
-        display_cols = ["Player","FairOdds","BookieOdds","Edge %","Adj Edge %"]
+
         with c1:
             st.caption(game_info["home"])
             if not hdf.empty:
-                st.dataframe(hdf[display_cols], height=218, hide_index=True)
+                st.dataframe(prep(hdf), height=218, use_container_width=True)
             else:
                 st.info("No data for home team.")
+
         with c2:
             st.caption(game_info["away"])
             if not adf.empty:
-                st.dataframe(adf[display_cols], height=218, hide_index=True)
+                st.dataframe(prep(adf), height=218, use_container_width=True)
             else:
                 st.info("No data for away team.")
+
 
 # ----------------------------------------------------
 # ----------------------------------------------------
