@@ -245,7 +245,7 @@ home_30,     away_30      = parse_block("30+ Disposals")
 
 # ----------------------------------------------------
 # 9. Dashboard Layout
-st.title("AFL Dashboards")
+st.title("AFL Dashboard")
 dashboard_tab = st.radio("Select dashboard",
                         ["Goalscorer", "Disposals", "Teams"],
                         horizontal=True)
