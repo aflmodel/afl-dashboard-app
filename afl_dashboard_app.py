@@ -185,13 +185,20 @@ for sheet in sheet_names:
             home, away = [x.strip() for x in gm.split("VS")]
 
             game_info_mapping[gm] = {
-                "round": 11,  # or whatever your constant is
-                "home": home,
-                "away": away,
-                "date": pd.to_datetime(d).date() if pd.notnull(d) else None,
-                "city":    str(ct).strip(),
-                "weather_city": "Melbourne" if str(ct).lower()=="marvel" else str(ct).strip()
-            }
+    "round": 14,
+    "home": home,
+    "away": away,
+    "date": pd.to_datetime(d).date() if pd.notnull(d) else None,
+    # always display whatever is in the Excel cell (e.g. “Marvel”)
+    "city": str(ct).strip(),
+    # but if that cell says “Marvel”, force the weather lookup to Melbourne,AU
+    "weather_city": (
+        "Melbourne,AU" 
+        if str(ct).lower() == "marvel" 
+        else f"{str(ct).strip()},AU"
+    )
+}
+
     except Exception as e:
         st.warning(f"⚠️ Error processing sheet '{sheet}': {e}")
 
