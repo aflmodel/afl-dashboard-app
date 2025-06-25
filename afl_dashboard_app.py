@@ -210,7 +210,14 @@ with st.sidebar:
     selected_game = st.selectbox("Select a game", list(game_name_mapping.keys()))
     st.markdown("---")
     st.markdown("🎯 **Support The Model**")
-    st.markdown("💖 [Become a Patron](https://www.patreon.com/The_Model)")
+    # ←── Insert PC_Logo.png as a Patreon link
+    st.markdown(
+        '<a href="https://www.patreon.com/The_Model" target="_blank">'
+        '<img src="PC_Logo.png" width="80" alt="Patreon Logo">'
+        '</a>',
+        unsafe_allow_html=True
+    )
+    st.markdown("💖 [Join The Model Punt Club](https://www.patreon.com/The_Model)")
     st.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
     st.markdown("---")
     st.markdown("📬 **Stay in touch**")
