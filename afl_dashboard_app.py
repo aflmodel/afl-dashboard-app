@@ -9,6 +9,10 @@ import requests
 import streamlit.components.v1 as components
 import os, io, base64
 from PIL import Image
+import base64
+
+with open("PC_Logo.png", "rb") as f:
+    b64 = base64.b64encode(f.read()).decode()
 
 # ————— Helpers —————
 @st.cache_data
@@ -212,11 +216,14 @@ with st.sidebar:
     st.markdown("🎯 **Support The Model**")
     # ←── Insert PC_Logo.png as a Patreon link
     st.markdown(
-        '<a href="https://www.patreon.com/The_Model" target="_blank">'
-        '<img src="PC_Logo.png" width="80" alt="Patreon Logo">'
-        '</a>',
-        unsafe_allow_html=True
+        f'''
+        <a href="https://www.patreon.com/The_Model" target="_blank">
+        <img src="data:image/png;base64,{b64}" width="80" alt="Patreon Logo">
+        </a>
+        ''',  # <-- close the f-string here, then comma
+        unsafe_allow_html=True  # <-- properly pass this to st.markdown
     )
+
     st.markdown("💖 [Join The Model Punt Club](https://www.patreon.com/The_Model)")
     st.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
     st.markdown("---")
@@ -443,4 +450,3 @@ else:
             ),
             unsafe_allow_html=True
         )
-
