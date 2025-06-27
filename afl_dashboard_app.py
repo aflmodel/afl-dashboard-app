@@ -217,12 +217,15 @@ with st.sidebar:
     # ←── Insert PC_Logo.png as a Patreon link
     st.markdown(
         f'''
-        <a href="https://www.patreon.com/The_Model" target="_blank">
-        <img src="data:image/png;base64,{b64}" width="80" alt="Patreon Logo">
-        </a>
-        ''',  # <-- close the f-string here, then comma
-        unsafe_allow_html=True  # <-- properly pass this to st.markdown
+<div style="text-align:center; margin: 10px 0;">
+  <a href="https://www.patreon.com/The_Model" target="_blank">
+    <img src="data:image/png;base64,{b64}" width="120" alt="Patreon Logo">
+  </a>
+</div>
+        ''',
+        unsafe_allow_html=True
     )
+
 
     st.markdown("💖 [Join The Model Punt Club](https://www.patreon.com/The_Model)")
     st.markdown("☕️ [Buy me a coffee](https://www.buymeacoffee.com/aflmodel)")
