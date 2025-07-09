@@ -308,7 +308,7 @@ def prep(df):
 
 # ----------------------------------------------------
 # 9. Dashboard Layout
-st.title("AFL Dashboard")
+st.title("AFL Dashboard 🎯")
 dashboard_tab = st.radio("Select dashboard",
                         ["Goalscorer", "Disposals", "Teams"],
                         horizontal=True)
