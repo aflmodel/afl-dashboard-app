@@ -189,7 +189,7 @@ for sheet in sheet_names:
             home, away = [x.strip() for x in gm.split("VS")]
 
             game_info_mapping[gm] = {
-    "round": 18,
+    "round": 19,
     "home": home,
     "away": away,
     "date": pd.to_datetime(d).date() if pd.notnull(d) else None,
@@ -308,7 +308,7 @@ def prep(df):
 
 # ----------------------------------------------------
 # 9. Dashboard Layout
-st.title("AFL Dashboard 🎯")
+st.title("AFL Dashboard")
 dashboard_tab = st.radio("Select dashboard",
                         ["Goalscorer", "Disposals", "Teams"],
                         horizontal=True)
