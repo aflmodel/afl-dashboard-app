@@ -189,7 +189,7 @@ for sheet in sheet_names:
             home, away = [x.strip() for x in gm.split("VS")]
 
             game_info_mapping[gm] = {
-    "round": 20,
+    "round": 21,
     "home": home,
     "away": away,
     "date": pd.to_datetime(d).date() if pd.notnull(d) else None,
